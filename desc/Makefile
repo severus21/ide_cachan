@@ -1,0 +1,3 @@
+
+default:
+	pdflatex desc.tex

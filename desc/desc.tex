@@ -1,0 +1,81 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{IDE\\\Large{Software Engineering Project Description}}
+\author{Alice Rixte, K\'evin Le Run}
+\date{September 2016}
+
+\begin{document}
+
+\maketitle
+
+\section{General description}
+
+This project aims to design an IDE (Integrated Development Environment) for
+OCaml and possibly other languages. The goal is to organize the code in a
+different way than the conventional file structure. The functions and classes
+should be arranged in an intuitive way so as to facilitate software design.
+However the creation and design of the text editor is not within the scope of
+this project.
+
+\begin{description}
+
+    \item [Browser] The browser allows navigation through classes and functions
+        in the same way than file browsers. With a function selected, the user
+        can edit its implementation, its documentation, its tags, or its test
+        functions and add categories within modules.  The user should also be
+        able to interactively run the function or its tests in isolation.
+
+    \item [Function/Method finder] Allows finding functions by name, by
+        documentation keywords and by tags. Also allows finding functions by
+        giving an example of the expected inputs and outputs (through the help
+        of a simple language). As an example, giving 3 and 4 as inputs and
+        asking for a function returning 7 could yield a function computing the
+        addition of integers.
+
+    \item [Dependency graph] Allows the user to see the code structure through
+        a graph of class and module dependency.
+
+    \item [Import/Export] Allows the user to switch between this IDE and a
+        conventional project structure. It analyses the \texttt{.ml} files to
+        extract the code structure.
+
+    \item [Language Plugins] Allows adding more language support to the IDE
+        with extensions that can be implemented separately from the main
+        program, so that plugins can be produced by the community. It should be
+        able to change the terminology of code structure (modules->packages,
+        methods->functions) and the hierarchy while still preserving the
+        file-system-like browsing and search features. It should redefine
+        import and export features to accomodate to the new language.
+
+\end{description}
+
+\section{Detailed objectives}
+
+\begin{itemize}
+    \item [$\alpha$] Graphical User Interface (GUI)
+    \item [$\alpha$] Saving, loading, exiting
+    \item [$\alpha$] Browsing the structure
+    \item [$\alpha$] Export
+    \item [$\alpha$] Basic research
+    \item [$\alpha$] External text editor integration
+
+    \item [$\beta$] Import
+    \item [$\beta$] Language plugins (with at least a Java plugin)
+    \item [$\beta$] Advanced research
+    \item [$\beta$] Interactive function execution
+    \item [$\beta$] Compiler integration
+    \item [$\beta$] Interactive testing system (run tests only on selected
+        modules and functions)
+
+    \item [??] Dependency graph
+    \item [??] Debugger integration
+    \item [??] Documentation generation
+\end{itemize}
+
+\section{Comments}
+
+\texttt{// This is a comment}
+
+\end{document}
+
