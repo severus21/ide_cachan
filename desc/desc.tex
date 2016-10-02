@@ -38,7 +38,9 @@ this project.
 
     \item [Import/Export] Allows the user to switch between this IDE and a
         conventional project structure. It analyses the \texttt{.ml} files to
-        extract the code structure.
+        extract the code structure. This feature has to be implement in a 
+        way such that if several persons are working on the same projects,
+        one can choose to use its favorite text editor.
 
     \item [Language Plugins] Allows adding more language support to the IDE
         with extensions that can be implemented separately from the main
@@ -46,23 +48,24 @@ this project.
         able to change the terminology of code structure (modules->packages,
         methods->functions) and the hierarchy while still preserving the
         file-system-like browsing and search features. It should redefine
-        import and export features to accomodate to the new language.
+        import and export features to accommodate to the new language.
 
 \end{description}
 
 \section{Detailed objectives}
 
 \begin{itemize}
+	\item [$\alpha$] Define a model abstracting the structure of any programming language
     \item [$\alpha$] Graphical User Interface (GUI)
     \item [$\alpha$] Saving, loading, exiting
     \item [$\alpha$] Browsing the structure
-    \item [$\alpha$] Export
+    \item [$\alpha$] Basic import/export
     \item [$\alpha$] Basic research
     \item [$\alpha$] External text editor integration
-
-    \item [$\beta$] Import
+    
     \item [$\beta$] Language plugins (with at least a Java plugin)
     \item [$\beta$] Advanced research
+    \item [$\beta$] Advanced import/export
     \item [$\beta$] Interactive function execution
     \item [$\beta$] Compiler integration
     \item [$\beta$] Interactive testing system (run tests only on selected
