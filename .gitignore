@@ -4,3 +4,6 @@
 # OCaml files
 *.cmi
 *.cmo
+
+# Binaries
+gui
