@@ -1,9 +1,5 @@
 *.aux
 *.log
-
-# OCaml files
-*.cmi
-*.cmo
-
-# Binaries
-gui
+_build/
+*.native
+*~
