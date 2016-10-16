@@ -3,7 +3,7 @@ open GdkKeysyms
 
 let locale = GtkMain.Main.init ()
 
-let main () =
+let gui () =
     let window = GWindow.window ~resizable:true ~width:320 ~height:240
                                     ~title:"Simple lablgtk program" () in
     let vbox = GPack.vbox ~packing:window#add () in
@@ -33,5 +33,3 @@ let main () =
     window#add_accel_group accel_group;
     window#show ();
     Main.main ()
-
-let () = main ()

@@ -1,5 +1,8 @@
 *.aux
 *.log
-_build/
+debug/
+release/
 *.native
 *~
+*.cm*
+*.o
