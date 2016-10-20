@@ -19,7 +19,7 @@ let confirm_quit () =
 
 let gui () =
     let window = GWindow.window ~resizable:true ~width:320 ~height:240
-                                    ~title:"Simple lablgtk program" () in
+                                    ~title:"Awesome Ocaml IDE" () in
     let vbox = GPack.vbox ~packing:window#add () in
     ignore (
         window#event#connect#delete
