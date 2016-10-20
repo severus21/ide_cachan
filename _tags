@@ -1,2 +1,0 @@
-<libs/*>: precious, include
-#"src/gui.ml": use_lablgtk
