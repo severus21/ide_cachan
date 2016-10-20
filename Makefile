@@ -4,7 +4,7 @@ BUILD_DIR=debug/
 BUILD=ocamlbuild \
 	  -build-dir "$(BUILD_DIR)" \
 	  -cflags "$(DEBUG_OPTION)" \
-	  -package lablgtk2 \
+	  -package lablgtk2 -package oUnit \
 	  $(SOURCE_DIR)ide.native
 
 default:
