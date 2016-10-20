@@ -62,3 +62,7 @@ let gui () =
     window#show ();
     Main.main ()
 ;;
+
+let () =
+    ignore(locale)
+;;
