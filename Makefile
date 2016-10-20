@@ -19,4 +19,6 @@ release:
 	ln -s $(BUILD_DIR)$(SOURCE_DIR)ide.native ide.release
 
 clean:
+	-rm -rf debug/
+	-rm -rf release/
 	ocamlbuild -clean
