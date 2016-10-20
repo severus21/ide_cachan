@@ -2,7 +2,8 @@
 *.log
 debug/
 release/
-*.native
+ide.debug
+ide.release
 *~
 *.cm*
 *.o
