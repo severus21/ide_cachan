@@ -10,7 +10,7 @@ let confirm_quit () =
     let dialog = GToolbox.question_box
         "Confirm"
         ["Yes";"No"]
-        "Do you want to quit ?" in
+        "Do you really want to quit ?" in
     match dialog with
     | 0 | 2 -> false
     | 1 -> true
