@@ -3,7 +3,7 @@ Projet génie logiciel 2016 de l'ENS Cachan
 
 ## Building
 
-You will need the `lablgtk` module
+You will need the `lablgtk` and `ounit` modules
 ```
-opam install lablgtk
+opam install lablgtk ounit
 ```
