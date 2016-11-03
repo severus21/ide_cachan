@@ -8,17 +8,18 @@ BUILD=ocamlbuild \
 	  $(SOURCE_DIR)ide.native
 
 default:
-	-rm ide.debug
+	rm -f ide.debug
 	$(BUILD)
 	ln -s $(BUILD_DIR)$(SOURCE_DIR)ide.native ide.debug
+
 release:
 	DEBUG_OPTION=
 	BUILD_DIR=release/
-	-rm ide.release
+	rm -f ide.release
 	$(BUILD)
 	ln -s $(BUILD_DIR)$(SOURCE_DIR)ide.native ide.release
 
 clean:
-	-rm -rf debug/
-	-rm -rf release/
+	rm -rf debug/
+	rm -rf release/
 	ocamlbuild -clean
