@@ -2,8 +2,15 @@ open Gobject.Data
 
 class navlist ~packing =
     let hbox = GPack.hbox ~packing () in
+    let _cols = new GTree.column_list in
+    let _col1 = _cols#add string
+    and _col2 = _cols#add string
+    and _col3 = _cols#add string in
     object(self)
-        val cols = new GTree.column_list
+        val cols = _cols
+        val col1 = _col1
+        val col2 = _col2
+        val col3 = _col3
         val pack = hbox#add
 
         method private make_model ~data ~col () =
@@ -23,10 +30,10 @@ class navlist ~packing =
             ignore(view#append_column _col);
             view
 
+        method set_data data =
+            make_view 
+
         initializer
-            let col1 = cols#add string in
-            let col2 = cols#add string in
-            let col3 = cols#add string in
             let model1 = self#make_model ~col:col1
                                          ~data:[("Hello");("World")] () in
             let model2 = self#make_model ~col:col2
