@@ -30,9 +30,6 @@ class navlist ~packing =
             ignore(view#append_column _col);
             view
 
-        method set_data data =
-            make_view 
-
         initializer
             let model1 = self#make_model ~col:col1
                                          ~data:[("Hello");("World")] () in
