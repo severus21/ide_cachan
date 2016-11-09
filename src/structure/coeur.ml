@@ -41,19 +41,31 @@ and ['a] set(name_tmp:string) = object(self)
   method to_string = match children with
   | [] -> "E(" ^ self#name ^ ")"
   | a::b -> "S:" ^ self#name ^ "(" ^ a#to_string ^ ((List.fold_left (fun a b -> a ^ "," ^ b#to_string) "" b)) ^ ")"
+  val mutable name_class = ""
+  method change_name_class name_c = 
+    name_class <-name_c;
+    List.iter (fun a -> a#change_name_class(name_c)) children
+  method name_class = name_class
 end
 
 type gset = gset set;;
 
 let print = Printf.printf "%s\n";;
 
+
+
+
 let () =
   let elt1 = new set("poussin") in
   let set1 = new set("poule") in
   let elt2 = new set("oeuf") in
   let set2 = new set("ferme") in
+ (* let class1 = new classe("campagne") in*)
   set1#add_child elt1;
   set1#add_child elt2;
   set2#add_child set1;
-  print set2#to_string
+(*  class1#add_child set1;
+  class1#give_name_class();*)
+  print set2#to_string;
+  Printf.printf "classe : %s\n" (elt1#name_class)
 ;;
