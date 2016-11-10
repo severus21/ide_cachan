@@ -2,46 +2,58 @@ open Gobject.Data
 
 class navlist ~packing =
     let hbox = GPack.hbox ~packing () in
+    let make_view model column =
+        let view = GTree.view ~model ~packing:hbox#add () in
+        let renderer = GTree.cell_renderer_text [], ["text", column] in
+        let viewcol = GTree.view_column ~renderer () in
+        ignore(view#append_column viewcol);
+        view
+    in
     let _cols = new GTree.column_list in
     let _col1 = _cols#add string
     and _col2 = _cols#add string
     and _col3 = _cols#add string in
-    object(self)
+    let _model1 = GTree.list_store _cols
+    and _model2 = GTree.list_store _cols
+    and _model3 = GTree.list_store _cols in
+    let _view1 = make_view _model1 _col1
+    and _view2 = make_view _model2 _col2
+    and _view3 = make_view _model3 _col3 in
+    object
         val cols = _cols
         val col1 = _col1
         val col2 = _col2
         val col3 = _col3
-        val pack = hbox#add
+        val model1 = _model1
+        val model2 = _model2
+        val model3 = _model3
+        val view1 = _view1
+        val view2 = _view2
+        val view3 = _view3
 
-        method private make_model ~data ~col () =
-            let store = GTree.list_store cols in
-            let fill (value:string) =
-                let iter = store#append () in
-                store#set ~row:iter ~column:col value
+        (** Sets the data in col *)
+        method set_data ~col ~data () =
+            let _set_data (model:GTree.list_store) column =
+                model#clear ();
+                let fill (value:string) =
+                    let iter = model#append () in
+                    model#set ~row:iter ~column:column value
                 in
-            List.iter fill data;
-            store
+                List.iter fill data
+            in
+            match col with
+            | 1 -> _set_data model1 col1
+            | 2 -> _set_data model2 col2
+            | 3 -> _set_data model3 col3
+            | _ -> failwith (Printf.sprintf "No such column (%i)" col)
 
-        method private make_view ~model ~col () =
-            let view = GTree.view ~model ~packing:pack () in
-            (* Column 1 *)
-            let rendererer = GTree.cell_renderer_text [], ["text", col] in
-            let _col = GTree.view_column ~title:"hi" ~renderer:rendererer () in
-            ignore(view#append_column _col);
-            view
+        (** Changes the column title to title *)
+        method set_column_title ~col ~title () =
+            match col with
+            | 1 -> (view1#get_column 0)#set_title title
+            | 2 -> (view2#get_column 0)#set_title title
+            | 3 -> (view3#get_column 0)#set_title title
+            | _ -> failwith (Printf.sprintf "No such column (%i)" col)
 
-        initializer
-            let model1 = self#make_model ~col:col1
-                                         ~data:[("Hello");("World")] () in
-            let model2 = self#make_model ~col:col2
-                                         ~data:[("Hello");("World")] () in
-            let model3 = self#make_model ~col:col3
-                                         ~data:[("Hello");("World")] () in
-            let view1 = self#make_view ~model:model1 ~col:col1 () in
-            let view2 = self#make_view ~model:model2 ~col:col2 () in
-            let view3 = self#make_view ~model:model3 ~col:col3 () in
-            ignore(view1);
-            ignore(view2);
-            ignore(view3);
     end
 ;;
