@@ -3,8 +3,7 @@ open Parsetree
 (** top-level structures*)
 type tl_struct =  
 |Tl_none (*to be removed*)
-|Tl_open of string*string (*for the moment , we only extract the name of the module opened
-			   *and we give the complete line of the openning*)
+|Tl_open of string (*for the moment , we only extract  the complete line of the openning*)
 
 (** Top-level ast type*)
 type tl_ast = tl_struct list
@@ -30,20 +29,25 @@ let print_ast ast =
 
 
 
-(* ***BEGIN Miscallaneous functions on locations*)
+(* ***BEGIN Miscellaneous functions on locations*)
+(**Renvoie la sous chaîne de ml qui correspond à loc *)
+let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; loc_ghost = _}  ->
+  let cs = s.Lexing.pos_cnum and ce = e.Lexing.pos_cnum in 
+  String.sub ml cs (ce - cs)
+
+  
 
 
-(* ***END Miscallaneous functions on locations*)
+(* ***END Miscellaneous functions on locations*)
 
 
 (* ***BEGIN Conversion from ast to tl_ast*)
 
 
-let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = _} ->
+let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
   begin
-    ignore ml;
     match struct_item with 
-    |Pstr_open _ -> Tl_open("blub","blab")
+    |Pstr_open _-> Tl_open (get_str_from_location ml loc)
     |_ -> Tl_none
   end
 
@@ -55,12 +59,16 @@ let ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
   
 
 (* ***BEGIN Printing of a tl_ast*)
-let print_tl_struct tl_s = match tl_s with 
-  |Tl_open(s1,s2)-> Printf.printf "%s %s\n" s1 s2
-  |_ -> ()
+
+let tl_struct_to_str tl_s = match tl_s with 
+  |Tl_open s-> Format.sprintf "%s\n" s
+  |_ -> ""
+
+let tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
+
+
     
 
-let print_tl_ast tl = List.fold_left (fun () -> print_tl_struct) () tl
-
+let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 
 (* ***END Printing of a tl_ast*)
