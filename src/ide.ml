@@ -1,6 +1,5 @@
+open Parseml
 
-open Gui
 
 let () =
-    Printf.printf "%s\n" "*********************** IDE ***********************";
-    gui ()
+    let _ = test "t.ml" in ()
