@@ -1,0 +1,5 @@
+Pour faire marcher ppx_tools, il faut d'abord évaluer 
+eval $(opam config env)
+
+Ensuite 
+ocamlfind ppx_tools/dumpast -e "1 + 2"
