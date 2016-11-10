@@ -34,6 +34,7 @@ and ['a] set(name_tmp:string) = object(self)
 
   val mutable children = []
   method add_child (child: 'a) = children <- child::children
+  method children = children
 
   method name = name_tmp
   val mutable meta_data = new metaData
