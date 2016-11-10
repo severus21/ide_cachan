@@ -62,7 +62,26 @@ class navlist ~packing =
             | 3 -> (view3#get_column 0)#set_title title
             | _ -> failwith (Printf.sprintf "No such column (%i)" col)
 
+        method private selection_changed1 selection () =
+            let get path =
+                let row = model1#get_iter path in
+                model1#get ~row ~column:col1
+            in
+            match selection#get_selected_rows with
+            | [p] -> self#set_data ~col:2 ~data:((get p)#children) ()
+            | _ -> failwith "What"
+
         initializer
-            self#set_data ~col:1 ~data:[new set("test")] ()
+            let a = new set("A")
+            and aa = new set("AA")
+            and ab = new set("AB") in
+            a#add_child aa;
+            a#add_child ab;
+            let b = new set("B")
+            and ba = new set("BA") in
+            b#add_child ba;
+            self#set_data ~col:1 ~data:[a;b] ();
+            ignore(view1#selection#connect#changed
+                ~callback:(self#selection_changed1 view1#selection))
     end
 ;;
