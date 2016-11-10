@@ -3,8 +3,7 @@
 (** top-level structures*)
 type tl_struct =  
 |Tl_none (*to be removed*)
-|Tl_open of string*string (*for the moment , we only extract the name of the module opened
-			   *and we give the complete line of the openning*)
+|Tl_open of string (*for the moment , we only extract  the complete line of the openning*)
 
 (** Top-level ast type*)
 type tl_ast = tl_struct list

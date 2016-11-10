@@ -7,3 +7,4 @@ ide.release
 *~
 *.cm*
 *.o
+*.cfg
