@@ -4,7 +4,8 @@ open Asttypes
 (** top-level structures*)
 type tl_struct =  
 |Tl_none (*to be removed*)
-|Tl_open of string (*for the moment , we only extract  the complete line of the openning*)
+|Tl_open of string list * string (* the string list represents Module1.Module2. ... 
+				 the secund parameter is the complete lign*)
 |Tl_var of string * string
 |Tl_fun of string * string
 |Tl_exception of string * string
@@ -28,7 +29,7 @@ let print_ast ast =
 
 
 (* ***BEGIN Miscellaneous functions on locations*)
-(**Renvoie la sous chaîne de ml qui correspond à loc *)
+(**Returns the substring corresponding to the location loc *)
 let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; loc_ghost = _}  ->
   let cs = s.Lexing.pos_cnum and ce = e.Lexing.pos_cnum in 
   String.sub ml cs (ce - cs)
@@ -41,11 +42,22 @@ let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; l
 
 (* ***BEGIN Conversion from ast to tl_ast*)
 
+(** Returns the string list ["Module1","Module2"] for the lign "open Module1.Module2"*)
+let open_description_to_string_list od = 
+  let rec od_to_sl lid = match lid with 
+    |Longident.Lident s -> [s]
+    |Longident.Ldot (lid',s) -> s::(od_to_sl lid')
+    |Longident.Lapply(_,_) -> failwith "I don't know what is this (Alice) (raised in tl_ast.ml)"
+  in
+  od_to_sl od.txt
+  
+
 
 let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
   begin
     match struct_item with 
-    |Pstr_open open_desc -> ignore open_desc;  Tl_open (get_str_from_location ml loc)
+    |Pstr_open open_desc ->  Tl_open(open_description_to_string_list open_desc.popen_lid,
+				     get_str_from_location ml loc)
     |Pstr_value(_,  value::_)->((*pour l'instant on ne traite que la première*)
         match value.pvb_pat.ppat_desc  with 
         |Ppat_var loc->(
@@ -75,7 +87,7 @@ let ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
 (* ***BEGIN Printing of a tl_ast*)
 
 let tl_struct_to_str tl_s = match tl_s with 
-    |Tl_open s-> Format.sprintf "%s\n" s
+    |Tl_open(_,s)-> Format.sprintf "%s\n" s
     |Tl_var(name, expr)->Format.sprintf "let %s=%s\n" name expr 
     |Tl_fun(name, expr)->Format.sprintf "letfun %s %s\n" name expr
     |Tl_exception(name, values)->Format.sprintf "exception %s : %s" name values        |Tl_type values->(
@@ -91,3 +103,6 @@ let tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
 let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 
 (* ***END Printing of a tl_ast*)
+
+
+let unit_tests () = ()
