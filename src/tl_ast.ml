@@ -1,4 +1,5 @@
 open Parsetree
+open Asttypes
 
 (** top-level structures*)
 type tl_struct =  
@@ -12,16 +13,6 @@ type tl_struct =
 (** Top-level ast type*)
 type tl_ast = tl_struct list
 
-
-(*let file_to_string f = 
-  let c = open_in f and s = ref "" and continue = ref true in
-  while !continue do 
-    try 
-      s := !s ^ ((input_line c)^ "\n")
-    with 
-    |End_of_file -> continue := false
-  done;
-  !s*)
 
 let file_to_string path=
 	let input = open_in path in
@@ -54,8 +45,8 @@ let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; l
 let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
   begin
     match struct_item with 
-    |Pstr_open _-> Tl_open (get_str_from_location ml loc)
-    |Pstr_value(rec_flag,  value::t)->((*pour l'instant on ne traite que la première*)
+    |Pstr_open open_desc -> ignore open_desc;  Tl_open (get_str_from_location ml loc)
+    |Pstr_value(_,  value::_)->((*pour l'instant on ne traite que la première*)
         match value.pvb_pat.ppat_desc  with 
         |Ppat_var loc->(
             let name = loc.txt and expr = (get_str_from_location ml 
@@ -66,8 +57,8 @@ let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc}
         )(*comment faire avec les autrs patterns???*)
         |_->Tl_none                  
     )
-    |Pstr_exception e-> Tl_exception( e.pext_name.txt, get_str_from_location ml e.pext_loc )                                   
-    |Pstr_type  decls->Tl_type( List.map( 
+    |Pstr_exception e-> Tl_exception( e.pext_name.txt, get_str_from_location ml e.pext_loc )
+    |Pstr_type(_,decls)->Tl_type( List.map( 
         function decl ->
         (decl.ptype_name.txt, get_str_from_location ml decl.ptype_name.loc)
        ) decls )
