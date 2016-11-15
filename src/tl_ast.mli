@@ -4,6 +4,10 @@
 type tl_struct =  
 |Tl_none (*to be removed*)
 |Tl_open of string (*for the moment , we only extract  the complete line of the openning*)
+|Tl_var of string * string
+|Tl_fun of string * string
+|Tl_exception of string * string
+|Tl_type of (string * string) list
 
 (** Top-level ast type*)
 type tl_ast = tl_struct list
