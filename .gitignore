@@ -9,3 +9,4 @@ ide.release
 *.o
 *.cfg
 src/structure/coeur
+oUnit*
