@@ -3,7 +3,7 @@ SOURCE_DIR=src/
 BUILD_DIR=debug/
 BUILD=ocamlbuild \
 	  -build-dir "$(BUILD_DIR)" \
-	  -cflags "$(DEBUG_OPTION) -w +A@1..5@7..47@49..59" \
+	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@7..47@49..59" \
 	  -package lablgtk2 -package oUnit -package compiler-libs.common\
 	  $(SOURCE_DIR)ide.native
 
