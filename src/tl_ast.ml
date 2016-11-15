@@ -1,5 +1,6 @@
 open Parsetree
 open Asttypes
+open OUnit2
 
 (** top-level structures*)
 type tl_struct =  
@@ -19,6 +20,7 @@ let file_to_string path=
 	let input = open_in path in
 	really_input_string input (in_channel_length input)
 
+(**Opens a file and returns its ocaml ast*)
 let get_ast f = 
   Parse.implementation (Lexing.from_channel (open_in f)) 
 
@@ -43,13 +45,13 @@ let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; l
 (* ***BEGIN Conversion from ast to tl_ast*)
 
 (** Returns the string list ["Module1","Module2"] for the lign "open Module1.Module2"*)
-let open_description_to_string_list od = 
-  let rec od_to_sl lid = match lid with 
-    |Longident.Lident s -> [s]
-    |Longident.Ldot (lid',s) -> s::(od_to_sl lid')
+let open_description_to_string_list od =
+  let rec od_to_sl lid acc = match lid with 
+    |Longident.Lident s -> s::acc
+    |Longident.Ldot (lid',s) -> od_to_sl lid' (s::acc)
     |Longident.Lapply(_,_) -> failwith "I don't know what is this (Alice) (raised in tl_ast.ml)"
   in
-  od_to_sl od.txt
+  od_to_sl od.txt []
   
 
 
@@ -76,6 +78,8 @@ let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc}
        ) decls )
     |_ -> Tl_none
   end
+
+
 
 (*ml is a string containing the whole file from which ast was created *)
 let ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
@@ -105,4 +109,20 @@ let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 (* ***END Printing of a tl_ast*)
 
 
-let unit_tests () = ()
+(* ***BEGIN Some functions to test more easily *)
+
+let ast_from_string s = Parse.implementation (Lexing.from_string s) 
+let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
+let quick_tl_struct s = List.hd (quick_tl_ast s)
+
+(* ***END Some functions to test more easily *)
+
+let test_open _ = 
+  assert_equal (quick_tl_struct "open Module1.Module2") 
+    (Tl_open(["Module1";"Module2"],"open Module1.Module2"))
+
+let test_structs = 
+  "struct tests">:::
+    ["open">::test_open]
+
+let unit_tests () = run_test_tt_main test_structs

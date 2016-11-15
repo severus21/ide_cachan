@@ -3,7 +3,8 @@
 (** top-level structures*)
 type tl_struct =  
 |Tl_none (*to be removed*)
-|Tl_open of string (*for the moment , we only extract  the complete line of the openning*)
+|Tl_open of string list * string (* the string list represents Module1.Module2. ... 
+				 the secund parameter is the complete lign*)
 |Tl_var of string * string
 |Tl_fun of string * string
 |Tl_exception of string * string
@@ -29,6 +30,7 @@ val ast_to_tl_ast : string -> Parsetree.structure_item list -> tl_ast
 (** Prints a tl_ast *)
 val print_tl_ast : tl_ast -> unit
 
-
+(** Unit tests for the Tl_ast module*)
+val unit_tests : unit -> unit
 
 
