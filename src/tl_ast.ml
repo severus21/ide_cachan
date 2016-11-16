@@ -94,7 +94,8 @@ let tl_struct_to_str tl_s = match tl_s with
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
     |Tl_var(name, expr)->Format.sprintf "let %s=%s\n" name expr 
     |Tl_fun(name, expr)->Format.sprintf "letfun %s %s\n" name expr
-    |Tl_exception(name, values)->Format.sprintf "exception %s : %s" name values        |Tl_type values->(
+    |Tl_exception(name, values)->Format.sprintf "exception %s : %s" name values        
+    |Tl_type values->(
         List.fold_left (fun head (name,value)-> Format.sprintf "%s type %s : %s\n" head name value) "" values   
     )
     |_ -> ""
