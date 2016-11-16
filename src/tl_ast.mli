@@ -1,6 +1,7 @@
 (** This module contains functions allowing to manipulate ocaml top-level ast*)
 
 (** top-level structures*)
+type tl_visibility = Tl_private | Tl_public
 type tl_struct =  
 |Tl_none (*to be removed*)
 |Tl_open of string list * string (* the string list represents Module1.Module2. ... 
@@ -9,7 +10,11 @@ type tl_struct =
 |Tl_fun of string * string
 |Tl_exception of string * string
 |Tl_type of string list * string
-
+|Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
+|Tl_class_and of tl_struct list*string
+and class_elmt=
+|Cl_method of tl_struct * tl_visibility
+|Cl_attribut of tl_struct                            
 (** Top-level ast type*)
 type tl_ast = tl_struct list
 

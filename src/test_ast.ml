@@ -1,10 +1,19 @@
-open Blubb.Blab
+class test aze ze= object(self)
+  val ard:string ="coucou"
+  val arf:int = 123
 
-let a = 1 
-let r = (1,2)
-let (a,b) = (1,2)
-let [|a;b|]=[|1;2|]              
-let f i =()      
+  method arg x=x                
+end
+and
+  test2 name = object 
+  method coucou = Printf.printf "coucou %s\n" name
+end
+(*
+class type testa = object
+  val coucou:string 
+end
 
-type a = int           
-exception Eer of string
+class virtual testi a b= object
+    method f =a
+  method g = b            
+end*)
