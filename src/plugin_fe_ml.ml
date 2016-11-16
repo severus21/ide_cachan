@@ -16,6 +16,7 @@ module Plugin_ml : Plugin_fe.Plugin = struct
     |Tl_fun(_,_) -> failwith "not implemented"
     |Tl_exception(_,_) -> failwith "not implemented"
     |Tl_type(_,_) -> failwith "not implemented"
+    |Tl_module(_,_)|Tl_class _|Tl_class_and (_,_) -> failwith "not implemented"
 
   (** "blub.ml" -> "Blub" *)
   let file_name_to_module_name f = 
@@ -41,7 +42,7 @@ module Plugin_ml : Plugin_fe.Plugin = struct
 	|["ml"] ->
 	  begin 
 	    let file_name = List.hd files in 
-	    let ast = ast_to_tl_ast (file_to_string file_name) in  
+	    let ast = string_to_tl_ast (file_to_string file_name) in  
 	    tl_ast_to_set ast file_name
 	  end
 	|["ml";"mli"] -> failwith "not implemented"

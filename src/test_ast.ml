@@ -1,4 +1,4 @@
-class test aze ze= object(self)
+(*class test aze ze= object(self)
   val ard:string ="coucou"
   val arf:int = 123
 
@@ -7,13 +7,31 @@ end
 and
   test2 name = object 
   method coucou = Printf.printf "coucou %s\n" name
-end
-(*
-class type testa = object
-  val coucou:string 
+end*)
+module type  s = sig
 end
 
-class virtual testi a b= object
-    method f =a
-  method g = b            
-end*)
+module Hello = 
+struct
+    let message = "Hello"
+                      let hello () = print_endline message
+end
+
+module Hello1 : 
+sig
+   val hello : unit -> unit
+end = 
+struct
+    let message = "Hello"
+                      let hello () = print_endline message
+end
+
+module type Hello_type =
+sig
+    val hello : unit -> unit
+end
+  
+module Hello3 : Hello_type =
+struct
+  let hello () = print_endline message
+end
