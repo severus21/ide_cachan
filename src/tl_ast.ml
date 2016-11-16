@@ -2,7 +2,15 @@ open Parsetree
 open Asttypes
 open OUnit2
 
+exception Not_define of string
+let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" )) 
+(**
+  * const ref de ml
+  *
+  *)
+
 (** top-level structures*)
+type tl_visibility = Tl_private | Tl_public  
 type tl_struct =  
 |Tl_none (*to be removed*)
 |Tl_open of string list * string (* the string list represents Module1.Module2. ... 
@@ -11,7 +19,11 @@ type tl_struct =
 |Tl_fun of string * string
 |Tl_exception of string * string
 |Tl_type of string list * string
-
+|Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
+|Tl_class_and of tl_struct list * string 
+and class_elmt=
+|Cl_method of tl_struct * tl_visibility
+|Cl_attribut of tl_struct                           
 (** Top-level ast type*)
 type tl_ast = tl_struct list
 
@@ -52,8 +64,53 @@ let open_description_to_string_list od =
     |Longident.Lapply(_,_) -> failwith "I don't know what is this (Alice) (raised in tl_ast.ml)"
   in
   od_to_sl od.txt []
-  
 
+   
+(**
+  * @param class_expr of a class
+  * @return class_struct, header
+  *)
+let rec get_class_struct (_:Lexing.position) = function 
+  |Pcl_fun(_,_,pattern, child_ast)-> get_class_struct pattern.ppat_loc.Location.loc_end child_ast.pcl_desc(*on est entrain de parser les arguments de la classe, child => child ast*)
+  |Pcl_structure(ast)-> ast.pcstr_self.ppat_loc.Location.loc_start, ast 
+  |_-> not_define "Pcl_* not supported"                                 
+
+(**
+  * @param Pcl_structure c_struct.pcstr_fields.listfield
+  * @return (attrs list, methods list)
+  *)
+let rec class_fields_to_attrs_methods ml elmts= function
+  |[]-> List.rev elmts
+  |{pcf_desc=Pcf_method(loc0, f_private, expr);pcf_loc=_;pcf_attributes=_}::t ->(
+let loc1 = (match expr with |Cfk_virtual ct->ct.ptyp_loc |Cfk_concrete(_,expr1) ->expr1.pexp_loc) in
+
+    let dmethod = Tl_fun(loc0.txt, get_str_from_location ml loc1) in
+    let dvisibility =  (match f_private with|Private->Tl_private |_-> Tl_public) in 
+      class_fields_to_attrs_methods ml ((Cl_method( dmethod, dvisibility) )::elmts) t
+  )
+  |{pcf_desc=Pcf_val(loc, _, expr);pcf_loc=_;pcf_attributes=_}::t ->(
+     let loc1 = (match expr with |Cfk_virtual ct->ct.ptyp_loc |Cfk_concrete(_,expr1) ->expr1.pexp_loc) in
+     let dattr = Tl_var(loc.txt, get_str_from_location ml loc1) in
+    class_fields_to_attrs_methods ml ((Cl_attribut dattr)::elmts) t
+  )
+  |_-> not_define "Pcf_* not supported"  
+
+let class_to_tl_class ml = function({pci_virt=virt; pci_params=_; 
+                                    pci_name=name; pci_expr=expr; pci_loc=loc;
+                                    pci_attributes=_}:class_declaration)->
+  
+  let header_end, struct_ast = get_class_struct expr.pcl_loc.Location.loc_start expr.pcl_desc in    
+  let elmts = class_fields_to_attrs_methods ml [] struct_ast.pcstr_fields in  
+  let self = begin
+    match struct_ast.pcstr_self.ppat_desc with |Ppat_any -> None |Ppat_var str_loc ->Some(str_loc.txt)|_->not_define "Ppat_* not supported for self" end in   
+ Tl_class {
+    name=name.txt;
+
+    header=get_str_from_location ml ({Location.loc_start=loc.Location.loc_start;Location.loc_end=header_end; Location.loc_ghost=false});
+    virt=(virt == Virtual);
+    self=self;
+    elmts=elmts;
+  } 
 
 let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
   begin
@@ -73,6 +130,10 @@ let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc}
     |Pstr_exception e->Tl_exception( e.pext_name.txt, get_str_from_location ml loc)
     |Pstr_type(_,decls)->Tl_type((List.map (function d->d.ptype_name.txt) decls), 
        get_str_from_location ml loc)
+    |Pstr_class decls->(
+        let cls = (List.map (function d->class_to_tl_class ml d) decls) in
+        Tl_class_and (cls, get_str_from_location ml loc)
+    )      
     |_ -> Tl_none
   end
 
@@ -86,16 +147,25 @@ let ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
   
 
 (* ***BEGIN Printing of a tl_ast*)
-
-let tl_struct_to_str tl_s = match tl_s with 
+let rec class_elmt_to_str head= function
+    |Cl_attribut attr ->  Format.sprintf "%s\tval %s" head (tl_struct_to_str attr)  
+    |Cl_method (m, f_v)->( Format.sprintf "%s\t%smethod %s" head 
+        (match f_v with |Tl_private->"private "|_->"") 
+        (tl_struct_to_str m)
+    )     
+and tl_struct_to_str =function 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
-    |Tl_var(name, expr)->Format.sprintf "let %s=%s\n" name expr 
-    |Tl_fun(name, expr)->Format.sprintf "letfun %s %s\n" name expr
-    |Tl_exception(name, values)->Format.sprintf "exception %s : %s" name values    
-    |Tl_type(names,value) ->(
-        List.fold_left (fun head name-> Format.sprintf "%s type |%s| : |%s|\n" head name value) "" names   
+    |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
+    |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
+    |Tl_exception(_, values)->Format.sprintf "%s\n" values    
+    |Tl_type(_,value)->Format.sprintf "%s\n" value
+    |Tl_class cl ->(
+       let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
+       let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
+         Format.sprintf "%s%s\n%s\nend\n" cl.header self_str elmts_str  
     )
-    |_ -> ""
+    |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s\n%s" head  (tl_struct_to_str cl)) "" cls 
+    |Tl_none -> ""
 
 let tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
 
@@ -151,12 +221,38 @@ let test_type_and _ =
   let tdef="type 'a tree=Nil|Node of 'a tree*'a tree*'a and 'a forest='a tree list" in
   assert_equal (quick_tl_struct tdef) (Tl_type(["tree";"forest"], tdef))
 
+let test_class _ =
+ let cdef="class test = object(self)\n\tval coucou:string=\"coucou\"\nend" in
+ begin
+   match  (quick_tl_struct cdef) with
+   |Tl_class_and( (Tl_class c)::_, a) ->(
+        Printf.printf "name #%s#\n" c.name;
+        Printf.printf "Header : #%s#\n" c.header;
+        Printf.printf "#%s#\n" a;
+        Printf.printf "#%s#\n" cdef;
+        Printf.printf "fuck!!!!!!!%s\n" (if a<>cdef then "ee" else "aa");
+        match c.elmts with
+          |Cl_attribut(Tl_var(n,v))::_->Printf.printf "attr #%s#%s#\n" n v
+          |_->()
+   )
+   |_->()                                       
+ end; 
+   assert_equal (quick_tl_struct cdef) (Tl_class_and([Tl_class({
+  name="test"; header="class test = object"; virt=false; self=Some("self"); elmts=[Cl_attribut(Tl_var("coucou", "coucou:string=\"coucou\""))]
+  }) ], cdef))
+(*
+let test_class_and _ =
+ let cdef="class test = object(self) val coucou:string=\"coucou\" end" in
+ assert_equal (quick_tl_struct cdef) (Tl_class(["test"], cdef))
+ *)
 let test_structs = 
   "struct tests">:::
     ["open">::test_open; "var">::test_var; "var_ref">::test_var_ref;
     "fun">::test_fun; "test_fun_function">::test_fun_function;
     "fun_function">::test_fun_function; "fun_fun">:: test_fun_fun;
     "exception">::test_exception; "test_type">::test_type; 
-    "test_type_and">::test_type_and]
+    "test_type_and">::test_type_and;
+                                     "test_class">::test_class(*;
+    "test_class_and">::test_class_and*)]
     
 let unit_tests () = run_test_tt_main test_structs
