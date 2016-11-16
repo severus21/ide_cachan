@@ -2,10 +2,13 @@
 
 
 type 'a tag_element = 
-  TStr of string
+| TStr of string
 | TRef of 'a;;
 
-type 'a tag = 'a tag_element list;;
+(* [Alice] I added string which wis the name of the tag 
+the values associated to the tag is the tag_element list
+*)
+type 'a tag = string * 'a tag_element list;;
 
 class type set_read_only = 
 object
@@ -25,32 +28,45 @@ class ['a] tags = object(self)
   val mutable tag_list:'a tag list =[]
   method add_tag (tag:'a tag) = tag_list <- tag::tag_list
 
-  method private tag_to_list z = 
+  method private tag_to_list (_,values) =  
     List.fold_left (fun prec -> function
   | TStr(x) -> prec ^ ", " ^ "S : " ^ x
-  | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name ) "" z
+  | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name ) "" values
 
   method to_string = "[" ^ (List.fold_left (fun prec b ->
     prec ^ "; " ^ self#tag_to_list b) "" tag_list) ^ "]"
 
 end
 
+
+
+
 and ['a] metaData = object
   inherit ['a] tags
 end
 
+
+
+
 and ['a] set (name_tmp:string) (*: ['a] set_read_only*)= object(self)
   inherit toStringable
   (*[Alice] I don't see the point of this line and the ide compiles 
-    when I delete it. Are you sure you need this?
-    inherit ['a] metaData*)
+    when I delete it. Are you sure you need this?*)
+  (*inherit ['a] metaData*)
 
   val mutable children = []
+
+  (**[Alice] tags used by the IDE*)
+  val meta_data_system = new metaData
+
+  (**[Alice] tags defined by the user*)
+  val meta_data_user = new metaData
+    
   method add_child (child: 'a) = children <- child::children
 
   method name = name_tmp
-  val mutable meta_data = new metaData
-
+  
+  (*[Alice] You never use the to_string method of tags. Is this normal?*)
   method to_string = match children with
   | [] -> "E(" ^ self#name ^ ")"
   | a::b -> "S:" ^ self#name ^ "(" ^ a#to_string ^ ((List.fold_left (fun a b -> a ^ "," ^ b#to_string) "" b)) ^ ")"

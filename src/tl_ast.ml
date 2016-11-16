@@ -81,7 +81,7 @@ let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc}
 
 
 (*ml is a string containing the whole file from which ast was created *)
-let ast_to_tl_ast ml_str = List.map (struct_to_tl_struct ml_str) (string_to_ast ml_str)
+let ast_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
 
 
 (* ***END Conversion from ast to tl_ast*)

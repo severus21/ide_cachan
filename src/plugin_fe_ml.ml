@@ -3,6 +3,15 @@ open Core
 module Plugin_ml : Plugin_fe.Plugin = struct
   let file_extensions  = [["ml";"mli"];["ml"]]
 
+  (*let tl_struct_to_set tl_str = match tl_str with 
+    |Tl_none -> new set("blub")
+    |Tl_open(open_ls,lign) -> 
+      let s = new set("")
+    |Tl_var(_,_) ->
+    |Tl_fun(_,_) ->
+    |Tl_exception(_,_) ->
+    |Tl_type(_,_) -> *)
+
   let string_to_set ext files = 
     if List.length ext <> List.length files then
       failwith "The number of strings does not match with the number of extensions (plugin_fe_ml.ml)"
