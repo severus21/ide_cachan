@@ -3,7 +3,8 @@
 
 type 'a tag_element = 
 | TStr of string
-| TRef of 'a;;
+| TRef of 'a
+| TDepend of string list;;
 
 
 type 'a tag =  'a tag_element list;;
@@ -23,6 +24,15 @@ end
 class ['a] tags = object(self)
   inherit toStringable
   val tag_htbl: (string,'a tag) Hashtbl.t = Hashtbl.create 4
+  method get_value str = 
+    try 
+      Some (Hashtbl.find tag_htbl str)
+    with 
+    |Not_found -> None
+
+  method add_tag name values = 
+    Hashtbl.replace tag_htbl name values 
+
   (*val mutable tag_list:'a tag list =[]
   method add_tag (tag:'a tag) = tag_list <- tag::tag_list
 
@@ -35,7 +45,10 @@ class ['a] tags = object(self)
   method private tag_to_list values =  
     List.fold_left (fun prec -> function
     | TStr(x) -> prec ^ ", " ^ "S : " ^ x
-    | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name ) "" values
+    | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name 
+    | TDepend _ -> "" (*[Alice] TODO*)
+    ) "" values
+    
 
 
   method to_string = 
@@ -64,10 +77,10 @@ and ['a] set (name_tmp:string) (*: ['a] set_read_only*)= object(self)
   val mutable children = []
 
   (**[Alice] tags used by the IDE*)
-  val meta_data_system = new metaData
+  method meta_data_sys : 'a metaData = new metaData
 
   (**[Alice] tags defined by the user*)
-  val meta_data_user = new metaData
+  method meta_data_usr : 'a metaData = new metaData
     
   method add_child (child: 'a) = children <- child::children
 
