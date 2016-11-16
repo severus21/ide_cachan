@@ -4,14 +4,19 @@ open Tl_ast
 module Plugin_ml : Plugin_fe.Plugin = struct
   let file_extensions  = [["ml";"mli"];["ml"]]
 
+
   let tl_struct_to_set struc (father:gset) = match struc with 
     |Tl_none -> failwith "obsolete"
-    |Tl_open(open_ls,lign) -> ignore lign; 
+    |Tl_open(open_ls,lign) -> 
+      ignore lign; 
       begin
 	match father#meta_data_sys#get_value "dependencies" with 
 	|Some values -> father#meta_data_sys#add_tag "dependencies" ((TDepend open_ls)::values)
 	|None -> father#meta_data_sys#add_tag "dependencies" [TDepend open_ls] 
-      end
+      end;
+      let open_set = new set(lign) in 
+      open_set#meta_data_sys#add_tag "element" [];
+      father#add_child open_set
     |Tl_var(_,_) -> failwith "not implemented"
     |Tl_fun(_,_) -> failwith "not implemented"
     |Tl_exception(_,_) -> failwith "not implemented"
