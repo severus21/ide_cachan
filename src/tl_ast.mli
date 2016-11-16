@@ -8,7 +8,7 @@ type tl_struct =
 |Tl_var of string * string
 |Tl_fun of string * string
 |Tl_exception of string * string
-|Tl_type of (string * string) list
+|Tl_type of string list * string
 
 (** Top-level ast type*)
 type tl_ast = tl_struct list
