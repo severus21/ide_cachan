@@ -93,7 +93,7 @@ let tl_struct_to_str tl_s = match tl_s with
     |Tl_fun(name, expr)->Format.sprintf "letfun %s %s\n" name expr
     |Tl_exception(name, values)->Format.sprintf "exception %s : %s" name values    
     |Tl_type(names,value) ->(
-        List.fold_left (fun head name-> Format.sprintf "%s type %s : %s\n" head name value) "" names   
+        List.fold_left (fun head name-> Format.sprintf "%s type |%s| : |%s|\n" head name value) "" names   
     )
     |_ -> ""
 
@@ -143,11 +143,20 @@ let test_exception _ =
   assert_equal (quick_tl_struct "exception E of string")
     (Tl_exception("E", "exception E of string"))
 
+let test_type _ =
+  let tdef= "type 'a tree =Nil |Node of 'a tree * 'a tree * 'a" in
+  assert_equal (quick_tl_struct tdef) (Tl_type(["tree"], tdef))
+
+let test_type_and _ =
+  let tdef="type 'a tree=Nil|Node of 'a tree*'a tree*'a and 'a forest='a tree list" in
+  assert_equal (quick_tl_struct tdef) (Tl_type(["tree";"forest"], tdef))
+
 let test_structs = 
   "struct tests">:::
     ["open">::test_open; "var">::test_var; "var_ref">::test_var_ref;
     "fun">::test_fun; "test_fun_function">::test_fun_function;
     "fun_function">::test_fun_function; "fun_fun">:: test_fun_fun;
-    "exception">::test_exception]
-
+    "exception">::test_exception; "test_type">::test_type; 
+    "test_type_and">::test_type_and]
+    
 let unit_tests () = run_test_tt_main test_structs
