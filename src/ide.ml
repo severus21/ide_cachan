@@ -1,6 +1,5 @@
 open Tl_ast
 open Plugin_fe_ml
-open Dep_graph_build
 
 let () =
   (*let tl = get_ast "src/test_ast.ml" and s = file_to_string "src/test_ast.ml" in 
