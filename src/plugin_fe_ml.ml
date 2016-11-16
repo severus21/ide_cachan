@@ -6,7 +6,7 @@ module Plugin_ml : Plugin_fe.Plugin = struct
 
   let tl_struct_to_set struc (father:gset) = match struc with 
     |Tl_none -> failwith "obsolete"
-    |Tl_open(open_ls,lign) -> ignore lign;
+    |Tl_open(open_ls,lign) -> ignore lign; 
       begin
 	match father#meta_data_sys#get_value "dependencies" with 
 	|Some values -> father#meta_data_sys#add_tag "dependencies" ((TDepend open_ls)::values)
@@ -16,7 +16,9 @@ module Plugin_ml : Plugin_fe.Plugin = struct
     |Tl_fun(_,_) -> failwith "not implemented"
     |Tl_exception(_,_) -> failwith "not implemented"
     |Tl_type(_,_) -> failwith "not implemented"
-    |Tl_module(_,_)|Tl_class _|Tl_class_and (_,_) -> failwith "not implemented"
+    |Tl_module (_,_) -> failwith "not implemented"
+    |Tl_class _ -> failwith "not implemented"
+    |Tl_class_and(_,_) -> failwith "not implemented"
 
   (** "blub.ml" -> "Blub" *)
   let file_name_to_module_name f = 
