@@ -20,9 +20,11 @@ let file_to_string path=
 	let input = open_in path in
 	really_input_string input (in_channel_length input)
 
-(**Opens a file and returns its ocaml ast*)
-let get_ast f = 
+
+let file_to_ast f = 
   Parse.implementation (Lexing.from_channel (open_in f)) 
+
+let string_to_ast s = Parse.implementation (Lexing.from_string s) 
 
 
 let print_ast ast = 
@@ -79,7 +81,7 @@ let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc}
 
 
 (*ml is a string containing the whole file from which ast was created *)
-let ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
+let ast_to_tl_ast ml_str = List.map (struct_to_tl_struct ml_str) (string_to_ast ml_str)
 
 
 (* ***END Conversion from ast to tl_ast*)
@@ -109,8 +111,7 @@ let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 
 (* ***BEGIN Some functions to test more easily *)
 
-let ast_from_string s = Parse.implementation (Lexing.from_string s) 
-let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
+let quick_tl_ast s = ast_to_tl_ast s 
 let quick_tl_struct s = List.hd (quick_tl_ast s)
 
 (* ***END Some functions to test more easily *)
