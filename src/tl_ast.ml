@@ -19,25 +19,26 @@ type tl_struct =
 |Tl_fun of string * string
 |Tl_exception of string * string
 |Tl_type of string list * string
+|Tl_module of string * tl_ast (*TODO : signature, foncteur*)                  
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 |Tl_class_and of tl_struct list * string 
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                           
 (** Top-level ast type*)
-type tl_ast = tl_struct list
+and tl_ast = tl_struct list
 
 
 let file_to_string path=
 	let input = open_in path in
 	really_input_string input (in_channel_length input)
 
-
+(**Opens a file and returns its ocaml ast*)
 let file_to_ast f = 
   Parse.implementation (Lexing.from_channel (open_in f)) 
 
-let string_to_ast s = Parse.implementation (Lexing.from_string s) 
-
+let string_to_ast str =
+  Parse.implementation (Lexing.from_string str)
 
 let print_ast ast = 
   Printast.implementation (Format.formatter_of_out_channel stdout) ast
@@ -114,7 +115,7 @@ let class_to_tl_class ml = function({pci_virt=virt; pci_params=_;
     elmts=elmts;
   } 
 
-let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
+let rec struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
   begin
     match struct_item with 
     |Pstr_open open_desc ->  Tl_open(open_description_to_string_list open_desc.popen_lid,
@@ -135,14 +136,21 @@ let struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc}
     |Pstr_class decls->(
         let cls = (List.map (function d->class_to_tl_class ml d) decls) in
         Tl_class_and (cls, get_str_from_location ml loc)
-    )      
+    )
+    |Pstr_module {pmb_name=loc; pmb_expr=expr; pmb_attributes=_; pmb_loc=_}->(
+        match expr.pmod_desc with
+        |Pmod_structure s-> Tl_module(loc.txt, ast_to_tl_ast ml s)
+        |_-> not_define "Pmod_* not supported"                  
+    )
     |_ -> Tl_none
   end
 
 
 
 (*ml is a string containing the whole file from which ast was created *)
-let ast_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
+and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
+    
+let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
 
 
 (* ***END Conversion from ast to tl_ast*)
@@ -161,6 +169,7 @@ and tl_struct_to_str =function
     |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_,value)->Format.sprintf "%s\n" value
+    |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%s\nend\n" name (tl_ast_to_str ast)                     
     |Tl_class cl ->(
        let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
@@ -169,7 +178,7 @@ and tl_struct_to_str =function
     |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s\n%s" head  (tl_struct_to_str cl)) "" cls 
     |Tl_none -> ""
 
-let tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
+and tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
 
 
     
@@ -181,7 +190,8 @@ let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 
 (* ***BEGIN Some functions to test more easily *)
 
-let quick_tl_ast s = ast_to_tl_ast s 
+let ast_from_string s = Parse.implementation (Lexing.from_string s) 
+let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
 let quick_tl_struct s = List.hd (quick_tl_ast s)
 
 (* ***END Some functions to test more easily *)

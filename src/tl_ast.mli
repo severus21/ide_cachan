@@ -10,6 +10,7 @@ type tl_struct =
 |Tl_fun of string * string
 |Tl_exception of string * string
 |Tl_type of string list * string
+|Tl_module of string * tl_struct list
 |Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 |Tl_class_and of tl_struct list*string
 and class_elmt=
@@ -33,7 +34,7 @@ val print_ast : Parsetree.structure_item list -> unit
 
 
 (** Converts a parsetree into a tl_ast *)
-val ast_to_tl_ast : string  -> tl_ast
+val string_to_tl_ast : string  -> tl_ast
 
 (** Prints a tl_ast *)
 val print_tl_ast : tl_ast -> unit
