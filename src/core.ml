@@ -5,10 +5,8 @@ type 'a tag_element =
 | TStr of string
 | TRef of 'a;;
 
-(* [Alice] I added string which wis the name of the tag 
-the values associated to the tag is the tag_element list
-*)
-type 'a tag = string * 'a tag_element list;;
+
+type 'a tag =  'a tag_element list;;
 
 class type set_read_only = 
 object
@@ -24,17 +22,26 @@ end
 
 class ['a] tags = object(self)
   inherit toStringable
-
-  val mutable tag_list:'a tag list =[]
+  val tag_htbl: (string,'a tag) Hashtbl.t = Hashtbl.create 4
+  (*val mutable tag_list:'a tag list =[]
   method add_tag (tag:'a tag) = tag_list <- tag::tag_list
 
-  method private tag_to_list (_,values) =  
-    List.fold_left (fun prec -> function
-  | TStr(x) -> prec ^ ", " ^ "S : " ^ x
-  | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name ) "" values
+  
 
   method to_string = "[" ^ (List.fold_left (fun prec b ->
-    prec ^ "; " ^ self#tag_to_list b) "" tag_list) ^ "]"
+    prec ^ "; " ^ self#tag_to_list b) "" tag_list) ^ "]"*)
+
+  (*[Alice] Why this name ???*)
+  method private tag_to_list values =  
+    List.fold_left (fun prec -> function
+    | TStr(x) -> prec ^ ", " ^ "S : " ^ x
+    | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name ) "" values
+
+
+  method to_string = 
+    let s = ref "" in 
+    Hashtbl.iter (fun _ values -> s := !s^(self#tag_to_list values)) tag_htbl;
+    !s
 
 end
 
