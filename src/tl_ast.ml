@@ -21,45 +21,45 @@ type tl_visibility =
 |Tl_private 
 |Tl_public  
 
-(** top-level structure *)   
+(* top-level structure *)   
 type tl_struct =  
 |Tl_none (*to be removed*)
 
-(** handle caml open module
+(* handle caml open module
   * name list, code
   * ex: open A.B -> ([A,B], open A.B) *)
 |Tl_open of string list * string  
 
-(** handle variable declaration, if the left-pattern is only one identifier
+(* handle variable declaration, if the left-pattern is only one identifier
   * name, code
   * ex: let a = 1 -> (a,let a =1) *)                            
 |Tl_var of string * string
 
-(** handle function declaration
+(*handle function declaration
   * name, code
   * ex: let f x=x -> (f, let f x=x)*)
 |Tl_fun of string * string
 
-(** handle exception declaration
+(* handle exception declaration
   * name, code 
   * ex: exception E of int -> (E, exception E of int)*)
 |Tl_exception of string * string
 
-(** handle type/rec-type/and-type declaration
+(* handle type/rec-type/and-type declaration
   * names of types, code
   * ex: type a=int -> ([a],type a=int)
   * ex: type a=int and b=float -> ([a;b],  type a=int and b=float)*)
 |Tl_type of string list * string
 
-(** handle module(not rec-module, not and-module)
+(* handle module(not rec-module, not and-module)
   * name, ast of the module*)
 |Tl_module of string * tl_ast (*TODO : foncteur*)
 
-(** handle module signature(not rec, not and)
+(* handle module signature(not rec, not and)
   * name, declarations of types*)
 |Tl_sign of string * tl_ast(*en fait une liste de type*)
 
-(** handle class  declaration
+(* handle class  declaration
   * with params, with self but without and-class, withour inheritance, without type coercion
   * name: name of the class 
   * header: name and params (ex: class a f1 f2=object ... end -> clas a f1 f2=object)
@@ -68,7 +68,7 @@ type tl_struct =
   * elmts: class components
  *)                       
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
-(** Not truly supported yep*)
+(* Not truly supported yep*)
 |Tl_class_and of tl_struct list * string
                                     
 (** class components *)
