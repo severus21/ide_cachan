@@ -20,6 +20,7 @@ type tl_struct =
 |Tl_exception of string * string
 |Tl_type of string list * string
 |Tl_module of string * tl_ast (*TODO : signature, foncteur*)                  
+|Tl_sign of string * tl_ast(*en fait une liste de type*)
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 |Tl_class_and of tl_struct list * string 
 and class_elmt=
@@ -113,7 +114,21 @@ let class_to_tl_class ml = function({pci_virt=virt; pci_params=_;
     virt=(virt == Virtual);
     self=self;
     elmts=elmts;
-  } 
+  }
+
+(**
+  * @param signature(signature_item list )
+  *)
+let rec sign_to_tl_sign ml types=function
+  |[] -> List.rev types
+  |{psig_desc=desc;psig_loc=_}::t->(
+    match desc with
+      |Psig_value {pval_name=name;pval_type=_;pval_prim=_;pval_attributes=_;pval_loc=loc}->(
+         let tmp = Tl_type([name.txt], get_str_from_location ml loc) in
+         sign_to_tl_sign ml (tmp::types) t  
+      )
+      |_-> not_define "Psig_* not defined"  
+  )
 
 let rec struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
   begin
@@ -142,6 +157,14 @@ let rec struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = 
         |Pmod_structure s-> Tl_module(loc.txt, ast_to_tl_ast ml s)
         |_-> not_define "Pmod_* not supported"                  
     )
+    |Pstr_modtype {pmtd_name=name; pmtd_type=opt_m_type; pmtd_attributes=_; pmtd_loc=_}->(
+        match opt_m_type with 
+        |None -> Tl_sign( name.txt, [])   
+        |Some m_type ->
+            match m_type.pmty_desc with 
+              |Pmty_signature s -> Tl_sign( name.txt, sign_to_tl_sign ml [] s)
+              |_-> not_define "Pmty_* not supported"                        
+     )
     |_ -> Tl_none
   end
 
@@ -169,6 +192,7 @@ and tl_struct_to_str =function
     |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_,value)->Format.sprintf "%s\n" value
+    |Tl_sign(name,ast)->Format.sprintf "module %s = sign\n%s\nend\n" name (tl_ast_to_str ast)
     |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%s\nend\n" name (tl_ast_to_str ast)                     
     |Tl_class cl ->(
        let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
@@ -256,6 +280,25 @@ let test_class_and _ =
  let cdef="class test = object(self) val coucou:string=\"coucou\" end" in
  assert_equal (quick_tl_struct cdef) (Tl_class(["test"], cdef))
  *)
+let test_module _ =
+  let mdef = "module Hello = struct \
+    let message = \"Hello\" \
+    let hello () = print_endline message \
+  end" in
+
+  let mstruct = (Tl_module( "Hello", [
+    (Tl_var("message", "let message = \"Hello\"")); 
+    (Tl_fun("hello", "let hello () = print_endline message"))
+  ])) in
+
+  assert_equal (quick_tl_struct mdef) mstruct                
+(*
+let test_s =
+    List.map( function (name,ml,tl_struct)->
+        name>::function _-> assert_equal (quick_tl_struct ml) tl_struct
+    )
+ *)
+
 let test_structs = 
   "struct tests">:::
     ["open">::test_open; "var">::test_var; "var_ref">::test_var_ref;
@@ -264,6 +307,7 @@ let test_structs =
     "exception">::test_exception; "test_type">::test_type; 
     "test_type_and">::test_type_and;
                                      "test_class">::test_class(*;
-    "test_class_and">::test_class_and*)]
+    "test_class_and">::test_class_and*);
+    "">::test_module]
     
 let unit_tests () = run_test_tt_main test_structs

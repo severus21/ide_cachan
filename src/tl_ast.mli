@@ -10,14 +10,15 @@ type tl_struct =
 |Tl_fun of string * string
 |Tl_exception of string * string
 |Tl_type of string list * string
-|Tl_module of string * tl_struct list
+|Tl_module of string * tl_ast
+|Tl_sign of string * tl_ast
 |Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 |Tl_class_and of tl_struct list*string
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                            
 (** Top-level ast type*)
-type tl_ast = tl_struct list
+and tl_ast = tl_struct list
 
 
 (** Returns the string containing the whole file f *)
