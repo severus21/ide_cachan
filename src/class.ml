@@ -34,7 +34,6 @@ and meth(name) = object(self)
   method to_string = "Meth(" ^ self#name ^ ")"
 end
 
-
 class ['a] classe(name) = object(self)
   inherit [class_element] set(name)
   val mutable name_class = name
@@ -44,6 +43,10 @@ class ['a] classe(name) = object(self)
   method add_child (child: 'a) =
     child#change_name_class(name);
     children <- child::children
+end
+
+class ['a] class_holder(name) = object(self)
+    inherit ['a classe] set(name)
 end
 
 

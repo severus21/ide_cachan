@@ -1,5 +1,9 @@
 *.aux
+*.dvi
 *.log
+*.pdf
+*.ps
+*.tex
 debug/
 release/
 ide.debug

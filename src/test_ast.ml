@@ -1,10 +1,37 @@
-open Blubb.Blab
+(*class test aze ze= object(self)
+  val ard:string ="coucou"
+  val arf:int = 123
 
-let a = 1 
-let r = (1,2)
-let (a,b) = (1,2)
-let [|a;b|]=[|1;2|]              
-let f i =()      
+  method arg x=x                
+end
+and
+  test2 name = object 
+  method coucou = Printf.printf "coucou %s\n" name
+end*)
+module type  s = sig
+end
 
-type a = int           
-exception Eer of string
+module Hello = 
+struct
+    let message = "Hello"
+                      let hello () = print_endline message
+end
+
+module Hello1 : 
+sig
+   val hello : unit -> unit
+end = 
+struct
+    let message = "Hello"
+                      let hello () = print_endline message
+end
+
+module type Hello_type =
+sig
+    val hello : unit -> unit
+end
+  
+module Hello3 : Hello_type =
+struct
+  let hello () = print_endline message
+end
