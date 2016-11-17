@@ -27,7 +27,7 @@ let ender = "\
 \\end{document}"
 
 (*
-class Node ordre = object
+class node ordre = object
 	val mutable size = 0
 	val mutable name = ""
 	val mutable angle = 0.
@@ -40,7 +40,12 @@ class Node ordre = object
 	method makePosition () = 	let abscisse = floor (80. *. (cos angle)) in
 	let ordonnee = floor (80. *. (sin angle) -. 100.) in (int_of_float abscisse , int_of_float ordonnee)
 	
+  method print_me out = output_string out ("\t\\node(" ^ name ^ ")(" ^ (string_of_int (fst position)) ^ "," ^ (string_of_int (snd position)) ^ "){" ^ name ^ "}\n")
+  (* affiche une flèche de modul à self *)
+  method print_to modul =
 *)
+
+
 
 (** Fonctions pas encore codées **)
 
@@ -157,7 +162,6 @@ let build_graph modules =
 	close_fic out ;
 	compile_tex ()
 
-let _ = build_graph ["toto";"tutu";"tyty";"tata";"tete"]
 
 
 
