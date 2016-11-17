@@ -14,7 +14,7 @@ module type Plugin =
    *)
     val file_extensions :  (string list) list
 
-    (** Example of use : string_to_set ["ml";"mli"] ["an ml string";"an mli string"]*)
+    (** Example of use : string_to_set ["ml";"mli"] ["my_file.ml";"my_file.mli"]*)
     val string_to_set : string list -> string list -> Core.gset
 
     (**This function is used to export the project*)
