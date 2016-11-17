@@ -219,7 +219,7 @@ let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
 let quick_tl_struct s = List.hd (quick_tl_ast s)
 
 (* ***END Some functions to test more easily *)
-
+(*
 let test_open _ = 
   assert_equal (quick_tl_struct "open Module1.Module2") 
     (Tl_open(["Module1";"Module2"],"open Module1.Module2"))
@@ -292,22 +292,80 @@ let test_module _ =
   ])) in
 
   assert_equal (quick_tl_struct mdef) mstruct                
-(*
-let test_s =
-    List.map( function (name,ml,tl_struct)->
+  *)
+let make_suite name suite =
+    name >::: (List.map( function (name,ml,tl_struct)->
         name>::function _-> assert_equal (quick_tl_struct ml) tl_struct
-    )
- *)
+    ) suite)
 
-let test_structs = 
-  "struct tests">:::
-    ["open">::test_open; "var">::test_var; "var_ref">::test_var_ref;
+let make_suites name suites =
+    name >::: (List.map( function (name,suite)->  make_suite name suite)suites) 
+
+let test_suites ()=
+    let ml_forest_t = "type 'a tree=Nil|Node of 'a tree*'a tree*'a and \
+    'a forest='a tree list" in
+    let ml_hello_c =  "class hello = object(self) val hello:string=\"hello\" \
+    end" in
+    let ml_hello_m =  "module Hello = struct \
+        let message = \"Hello\" \
+        let hello () = print_endline message \
+    end" in
+     
+[ 
+    ("suite_open", [
+        ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
+    ]);
+    ("suite_var", [
+        ("default", "let a = 3", Tl_var("a","let a = 3"));
+        ("ref", "let a = ref [\"test\"]", Tl_var("a", "let a = ref [\"test\"]"))
+    ]);
+    ("suite_fun", [
+        ("default", "let f x = x", Tl_fun("f", "let f x = x"));
+        ("function",  "let f = function x -> x", Tl_fun("f", 
+            "let f = function x -> x"));
+        ("fun", "let f = fun x y-> x+y", Tl_fun("f", "let f = fun x y-> x+y"))
+    ]);
+    ("suite_exception", [
+        ("default", "exception E of string", Tl_exception("E", 
+              "exception E of string"))
+    ]);
+    ("suite_type", [
+        ("default", "type 'a tree =Nil |Node of 'a tree * 'a tree * 'a", 
+        Tl_type(["tree"],"type 'a tree =Nil |Node of 'a tree * 'a tree * 'a"));
+        ("multi rec", ml_forest_t, Tl_type(["tree";"forest"], ml_forest_t))
+    ]);
+    ("suite_class", [
+        ("default", ml_hello_c, 
+        Tl_class_and([
+            Tl_class({
+                name="hello"; 
+                header="class hello = object"; 
+                virt=false; 
+                self=Some("self"); 
+                elmts=[
+                    Cl_attribut(Tl_var("hello", "hello:string=\"hello\""))
+                ]
+            })
+        ], ml_hello_c))
+    ]);
+    ("suite_module", [
+        ("default", ml_hello_m, Tl_module( "Hello", [
+            Tl_var("message", "let message = \"Hello\""); 
+            Tl_fun("hello", "let hello () = print_endline message")
+        ]))      
+    ]);
+]
+
+let test_structs =
+  let l = (make_suites "tl_ast" (test_suites())) in
+
+   l   (*i ["open">::test_open; "var">::test_var; "var_ref">::test_var_ref;
     "fun">::test_fun; "test_fun_function">::test_fun_function;
     "fun_function">::test_fun_function; "fun_fun">:: test_fun_fun;
     "exception">::test_exception; "test_type">::test_type; 
     "test_type_and">::test_type_and;
                                      "test_class">::test_class(*;
     "test_class_and">::test_class_and*);
-    "">::test_module]
+    "">::test_module]*)
     
 let unit_tests () = run_test_tt_main test_structs
