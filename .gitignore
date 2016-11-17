@@ -7,4 +7,6 @@ ide.release
 *~
 *.cm*
 *.o
-#*
+*.cfg
+src/structure/coeur
+oUnit*
