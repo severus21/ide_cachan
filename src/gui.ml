@@ -48,7 +48,17 @@ let gui () =
         ~callback: (fun () -> prerr_endline "Hello"));
 
     (* Navlist *)
-    ignore(new GuiNavlist.navlist ~packing:vbox#add);
+    let () =
+        let a = new Core.set("A")
+        and aa = new Core.set("AA")
+        and ab = new Core.set("AB") in
+        a#add_child aa;
+        a#add_child ab;
+        let b = new Core.set("B")
+        and ba = new Core.set("BA") in
+        b#add_child ba;
+        ignore(new GuiNavlist.navlist ~packing:vbox#add ~root:a);
+    in
 
     (* Frame *)
     let frame = GBin.frame ~label:"Code" ~packing:vbox#add () in
