@@ -37,11 +37,11 @@ let get_open modul = if modul = modul then [["Blub";"Blab";"toto"] ; ["tyty";"Bl
 
 (** Construction des noeuds **)
 
-(* renvoie la position du module de numéro index, sur un cercle de rayon 70 et d'origine 0,-100 *)
+(* renvoie la position du module de numéro index, sur un cercle de rayon 80 et d'origine 0,-100 *)
 let give_one_pos size index =
 	let angle = 8. *. atan(1.) *. (float_of_int index) /. (float_of_int size) in
-	let abscisse = floor (70. *. (cos angle)) in
-	let ordonnee = floor (70. *. (sin angle) -. 100.) in
+	let abscisse = floor (80. *. (cos angle)) in
+	let ordonnee = floor (80. *. (sin angle) -. 100.) in
 	(int_of_float abscisse , int_of_float ordonnee)
 
 (* renvoie la liste des positions correspondant à un graphe de dépendances à n modules *)
@@ -106,7 +106,7 @@ let print_edge_module modul modules out =
 	let open_list = get_useful_dep modul modules in
 	let rec aux mod_list = match mod_list with
 		|[] -> ()
-		|m::q -> (print_edges_two_mod open_list modul m out ; aux q)
+		|m::q -> if m<>modul then (print_edges_two_mod open_list modul m out ; aux q) else aux q
 	in
 	aux modules
 
@@ -145,8 +145,6 @@ let build_graph modules =
 	compile_tex ()
 
 let _ = build_graph ["toto";"tutu";"tyty";"tata";"tete"]
-
-
 
 
 
