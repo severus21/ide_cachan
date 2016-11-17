@@ -26,8 +26,21 @@ let ender = "\
 \
 \\end{document}"
 
-
-
+(*
+class Node ordre = object
+	val mutable size = 0
+	val mutable name = ""
+	val mutable angle = 0.
+	val mutable position = int * int
+	val ordre = ordre
+	
+	method makeSize s = size <- s
+	method makeName str = name <- str
+	method makeAngle () = angle <- 8. *. atan(1.) *. (float_of_int ordre) /. (float_of_int size)
+	method makePosition () = 	let abscisse = floor (80. *. (cos angle)) in
+	let ordonnee = floor (80. *. (sin angle) -. 100.) in (int_of_float abscisse , int_of_float ordonnee)
+	
+*)
 
 (** Fonctions pas encore codées **)
 
