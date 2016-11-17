@@ -8,7 +8,10 @@ and
   test2 name = object 
   method coucou = Printf.printf "coucou %s\n" name
 end*)
+let () = ()
+
 module type  s = sig
+  val hello : unit->unit
 end
 
 module Hello = 
@@ -16,7 +19,7 @@ struct
     let message = "Hello"
                       let hello () = print_endline message
 end
-
+(*
 module Hello1 : 
 sig
    val hello : unit -> unit
@@ -34,4 +37,4 @@ end
 module Hello3 : Hello_type =
 struct
   let hello () = print_endline message
-end
+end*)

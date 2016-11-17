@@ -27,8 +27,9 @@ release:
 	DEBUG_OPTION=
 	TARGET=ide
 	BUILD_DIR=release/
-	-rm $(TARGET).release
+	-rm -f $(TARGET).release
 	$(BUILD)$(TARGET).native
+
 	ln -s $(BUILD_DIR)$(SOURCE_DIR)ide.native ide.release
 
 clean:

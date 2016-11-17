@@ -8,11 +8,11 @@ type class_elt = Attr of string| Meth of string
 class virtual class_element(name) = object
   inherit [gset] set(name)
   method virtual as_attr: attr option
-  method virtual as_meth: meth option 
+  method virtual as_meth: meth option
   val mutable name_class = ""
   method virtual type_class_elt : class_elt
   method name_class = name_class
-  method change_name_class name_c = 
+  method change_name_class name_c =
     name_class <-name_c;
 end
 
@@ -26,7 +26,7 @@ and attr(name) = object(self)
 end
 
 and meth(name) = object(self)
-  inherit class_element(name) 
+  inherit class_element(name)
   method add_child _ = raise No_child
   method as_attr = None
   method as_meth = Some (self:>meth)
