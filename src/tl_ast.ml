@@ -4,9 +4,14 @@ open OUnit2
 
 exception Not_define of string
 let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" )) 
-(**
+(** TODO
   * const ref de ml
+  * rec-module, and-module, foncteur
+  * same for signature
+  * extand class
+  * basic-left pattern
   *
+  * rewrite and factorize
   *)
 
 (** top-level structures*)
@@ -63,6 +68,7 @@ type tl_struct =
   * elmts: class components
  *)                       
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
+(** Not truly supported yep*)
 |Tl_class_and of tl_struct list * string
                                     
 (** class components *)
@@ -263,80 +269,7 @@ let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
 let quick_tl_struct s = List.hd (quick_tl_ast s)
 
 (* ***END Some functions to test more easily *)
-(*
-let test_open _ = 
-  assert_equal (quick_tl_struct "open Module1.Module2") 
-    (Tl_open(["Module1";"Module2"],"open Module1.Module2"))
 
-let test_var _ =
-  assert_equal (quick_tl_struct "let a = 3")
-    (Tl_var("a","let a = 3"))
-
-let test_var_ref _ =
-  assert_equal (quick_tl_struct "let a = ref [\"test\"]")
-    (Tl_var("a", "let a = ref [\"test\"]"))
-
-let test_fun _ =
-  assert_equal (quick_tl_struct "let f x = x")
-    (Tl_fun("f", "let f x = x"))
-
-let test_fun_function _ = 
-  assert_equal (quick_tl_struct "let f = function x -> x")
-    (Tl_fun("f", "let f = function x -> x"))
-
-let test_fun_fun _ = 
-  assert_equal (quick_tl_struct "let f = fun x y-> x+y")
-    (Tl_fun("f", "let f = fun x y-> x+y"))
-
-let test_exception _ =
-  assert_equal (quick_tl_struct "exception E of string")
-    (Tl_exception("E", "exception E of string"))
-
-let test_type _ =
-  let tdef= "type 'a tree =Nil |Node of 'a tree * 'a tree * 'a" in
-  assert_equal (quick_tl_struct tdef) (Tl_type(["tree"], tdef))
-
-let test_type_and _ =
-  let tdef="type 'a tree=Nil|Node of 'a tree*'a tree*'a and 'a forest='a tree list" in
-  assert_equal (quick_tl_struct tdef) (Tl_type(["tree";"forest"], tdef))
-
-let test_class _ =
- let cdef="class test = object(self)\n\tval coucou:string=\"coucou\"\nend" in
- begin
-   match  (quick_tl_struct cdef) with
-   |Tl_class_and( (Tl_class c)::_, a) ->(
-        Printf.printf "name #%s#\n" c.name;
-        Printf.printf "Header : #%s#\n" c.header;
-        Printf.printf "#%s#\n" a;
-        Printf.printf "#%s#\n" cdef;
-        Printf.printf "fuck!!!!!!!%s\n" (if a<>cdef then "ee" else "aa");
-        match c.elmts with
-          |Cl_attribut(Tl_var(n,v))::_->Printf.printf "attr #%s#%s#\n" n v
-          |_->()
-   )
-   |_->()                                       
- end; 
-   assert_equal (quick_tl_struct cdef) (Tl_class_and([Tl_class({
-  name="test"; header="class test = object"; virt=false; self=Some("self"); elmts=[Cl_attribut(Tl_var("coucou", "coucou:string=\"coucou\""))]
-  }) ], cdef))
-(*
-let test_class_and _ =
- let cdef="class test = object(self) val coucou:string=\"coucou\" end" in
- assert_equal (quick_tl_struct cdef) (Tl_class(["test"], cdef))
- *)
-let test_module _ =
-  let mdef = "module Hello = struct \
-    let message = \"Hello\" \
-    let hello () = print_endline message \
-  end" in
-
-  let mstruct = (Tl_module( "Hello", [
-    (Tl_var("message", "let message = \"Hello\"")); 
-    (Tl_fun("hello", "let hello () = print_endline message"))
-  ])) in
-
-  assert_equal (quick_tl_struct mdef) mstruct                
-  *)
 let make_suite name suite =
     name >::: (List.map( function (name,ml,tl_struct)->
         name>::function _-> assert_equal (quick_tl_struct ml) tl_struct
@@ -400,16 +333,5 @@ let test_suites ()=
     ]);
 ]
 
-let test_structs =
-  let l = (make_suites "tl_ast" (test_suites())) in
-
-   l   (*i ["open">::test_open; "var">::test_var; "var_ref">::test_var_ref;
-    "fun">::test_fun; "test_fun_function">::test_fun_function;
-    "fun_function">::test_fun_function; "fun_fun">:: test_fun_fun;
-    "exception">::test_exception; "test_type">::test_type; 
-    "test_type_and">::test_type_and;
-                                     "test_class">::test_class(*;
-    "test_class_and">::test_class_and*);
-    "">::test_module]*)
-    
+let test_structs = (make_suites "tl_ast" (test_suites()))
 let unit_tests () = run_test_tt_main test_structs
