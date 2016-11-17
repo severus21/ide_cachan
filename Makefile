@@ -35,5 +35,5 @@ release:
 clean:
 	-rm -rf debug/
 	-rm -rf release/
-	-rm oUnit*
+	-rm -rf oUnit*
 	ocamlbuild -clean
