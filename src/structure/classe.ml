@@ -3,40 +3,25 @@ open Coeur
 
 exception No_child
 
-type class_elt = Attr of string| Meth of string
 
-class virtual class_element(name) = object
-  inherit [gset] set(name)
-  method virtual as_attr: attr option
-  method virtual as_meth: meth option 
-  val mutable name_class = ""
-  method virtual type_class_elt : class_elt
-  method name_class = name_class
-  method change_name_class name_c = 
-    name_class <-name_c;
-end
 
-and attr(name) = object(self)
-  inherit class_element(name)
+
+class attr(name) = object(self)
+  inherit set(name)
   method add_child _ = raise No_child
-  method as_attr = Some (self:>attr)
-  method as_meth = None
-  method type_class_elt = Attr name
   method to_string =  "Attr(" ^ self#name ^ ")"
 end
 
-and meth(name) = object(self)
-  inherit class_element(name) 
+class meth(name) = object(self)
+  inherit set(name) 
   method add_child _ = raise No_child
-  method as_attr = None
-  method as_meth = Some (self:>meth)
-  method type_class_elt = Meth name
   method to_string = "Meth(" ^ self#name ^ ")"
 end
 
+type class_element = [`Attribute of attr | `Method of meth];;
 
 class ['a] classe(name) = object(self)
-  inherit [class_element] set(name)
+  inherit class_element set(name)
   val mutable name_class = name
   method to_string = match children with
   | [] -> "C(" ^ self#name ^ ")"
@@ -44,6 +29,10 @@ class ['a] classe(name) = object(self)
   method add_child (child: 'a) =
     child#change_name_class(name);
     children <- child::children
+end
+
+class ['a] class_holder(name) = object(self)
+  inherit ['a classe] set(name)
 end
 
 
