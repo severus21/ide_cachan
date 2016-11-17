@@ -6,24 +6,24 @@
 
 let open_fic_out () = open_out "./graph.tex"
 
-let header = "
-\\documentclass{article}
-\\usepackage[dvipsnames]{xcolor}
-\\usepackage[a4paper,text={16cm,22.7cm},centering]{geometry}
-\\usepackage{gastex}
-\\gasset{frame=false}
-\\parindent=0pt
-
-\\begin{document}
-
-\\begin{center}
-\\begin{gpicture}
+let header = "\
+\\documentclass{article}\
+\\usepackage[dvipsnames]{xcolor}\
+\\usepackage[a4paper,text={16cm,22.7cm},centering]{geometry}\
+\\usepackage{gastex}\
+\\gasset{frame=false}\
+\\parindent=0pt\
+\
+\\begin{document}\
+\
+\\begin{center}\
+\\begin{gpicture}\
 "
 
-let ender = "
-\\end{gpicture}
-\\end{center}
-
+let ender = "\
+\\end{gpicture}\
+\\end{center}\
+\
 \\end{document}"
 
 
