@@ -10,23 +10,67 @@ let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" ))
   *)
 
 (** top-level structures*)
-type tl_visibility = Tl_private | Tl_public  
+
+(** method visibility *)                       
+type tl_visibility =  
+|Tl_private 
+|Tl_public  
+
+(** top-level structure *)   
 type tl_struct =  
 |Tl_none (*to be removed*)
-|Tl_open of string list * string (* the string list represents Module1.Module2. ... 
-				 the secund parameter is the complete lign*)
+
+(** handle caml open module
+  * name list, code
+  * ex: open A.B -> ([A,B], open A.B) *)
+|Tl_open of string list * string  
+
+(** handle variable declaration, if the left-pattern is only one identifier
+  * name, code
+  * ex: let a = 1 -> (a,let a =1) *)                            
 |Tl_var of string * string
+
+(** handle function declaration
+  * name, code
+  * ex: let f x=x -> (f, let f x=x)*)
 |Tl_fun of string * string
+
+(** handle exception declaration
+  * name, code 
+  * ex: exception E of int -> (E, exception E of int)*)
 |Tl_exception of string * string
+
+(** handle type/rec-type/and-type declaration
+  * names of types, code
+  * ex: type a=int -> ([a],type a=int)
+  * ex: type a=int and b=float -> ([a;b],  type a=int and b=float)*)
 |Tl_type of string list * string
-|Tl_module of string * tl_ast (*TODO : signature, foncteur*)                  
+
+(** handle module(not rec-module, not and-module)
+  * name, ast of the module*)
+|Tl_module of string * tl_ast (*TODO : foncteur*)
+
+(** handle module signature(not rec, not and)
+  * name, declarations of types*)
 |Tl_sign of string * tl_ast(*en fait une liste de type*)
+
+(** handle class  declaration
+  * with params, with self but without and-class, withour inheritance, without type coercion
+  * name: name of the class 
+  * header: name and params (ex: class a f1 f2=object ... end -> clas a f1 f2=object)
+  * virt: flag indicate the class is virtual or not
+  * self: (ex: object ... end -> None | object(c) ... end ->Some(c) )
+  * elmts: class components
+ *)                       
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
-|Tl_class_and of tl_struct list * string 
+|Tl_class_and of tl_struct list * string
+                                    
+(** class components *)
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                           
-(** Top-level ast type*)
+
+(** top-level ast type*)
 and tl_ast = tl_struct list
 
 
