@@ -6,26 +6,44 @@
 
 let open_fic_out () = open_out "./graph.tex"
 
-let header = "
-\\documentclass{article}
-\\usepackage[dvipsnames]{xcolor}
-\\usepackage[a4paper,text={16cm,22.7cm},centering]{geometry}
-\\usepackage{gastex}
-\\gasset{frame=false}
-\\parindent=0pt
-
-\\begin{document}
-
-\\begin{center}
-\\begin{gpicture}
+let header = "\
+\\documentclass{article}\
+\\usepackage[dvipsnames]{xcolor}\
+\\usepackage[a4paper,text={16cm,22.7cm},centering]{geometry}\
+\\usepackage{gastex}\
+\\gasset{frame=false}\
+\\parindent=0pt\
+\
+\\begin{document}\
+\
+\\begin{center}\
+\\begin{gpicture}\
 "
 
-let ender = "
-\\end{gpicture}
-\\end{center}
-
+let ender = "\
+\\end{gpicture}\
+\\end{center}\
+\
 \\end{document}"
 
+(*
+class node ordre = object
+	val mutable size = 0
+	val mutable name = ""
+	val mutable angle = 0.
+	val mutable position = int * int
+	val ordre = ordre
+	
+	method makeSize s = size <- s
+	method makeName str = name <- str
+	method makeAngle () = angle <- 8. *. atan(1.) *. (float_of_int ordre) /. (float_of_int size)
+	method makePosition () = 	let abscisse = floor (80. *. (cos angle)) in
+	let ordonnee = floor (80. *. (sin angle) -. 100.) in (int_of_float abscisse , int_of_float ordonnee)
+	
+  method print_me out = output_string out ("\t\\node(" ^ name ^ ")(" ^ (string_of_int (fst position)) ^ "," ^ (string_of_int (snd position)) ^ "){" ^ name ^ "}\n")
+  (* affiche une flèche de modul à self *)
+  method print_to modul =
+*)
 
 
 
@@ -144,7 +162,6 @@ let build_graph modules =
 	close_fic out ;
 	compile_tex ()
 
-let _ = build_graph ["toto";"tutu";"tyty";"tata";"tete"]
 
 
 

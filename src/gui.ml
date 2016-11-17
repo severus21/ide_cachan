@@ -18,12 +18,13 @@ let confirm_quit () =
 ;;
 
 let gui () =
-    let window = GWindow.window ~resizable:true ~width:320 ~height:240
-                                    ~title:"Awesome Ocaml IDE" () in
+    let window = GWindow.window ~resizable:true ~width:1280 ~height:720
+                                    ~title:"Awesome Ocaml IDE"
+                                    ~position:`CENTER () in
     let vbox = GPack.vbox ~packing:window#add () in
     ignore (
         window#event#connect#delete
-        ~callback: (fun _ -> not (confirm_quit ()))
+        ~callback: (fun _ -> false (* not (confirm_quit ())*))
     );
     ignore (window#connect#destroy ~callback: Main.quit);
 
@@ -46,16 +47,24 @@ let gui () =
     ignore(factory#add_item "Hello" ~key:_H
         ~callback: (fun () -> prerr_endline "Hello"));
 
-    (* Entry *)
-    let entry = GEdit.entry ~text:"Search" ~packing:vbox#add () in
-    ignore(entry#connect#activate ~callback: (fun () ->
-        prerr_endline (entry#text);
-        entry#set_text ""));
+    (* Navlist *)
+    let () =
+        let a = new Core.set("A")
+        and aa = new Core.set("AA")
+        and ab = new Core.set("AB") in
+        a#add_child aa;
+        a#add_child ab;
+        let b = new Core.set("B")
+        and ba = new Core.set("BA") in
+        b#add_child ba;
+        ignore(new GuiNavlist.navlist ~packing:vbox#add ~root:a);
+    in
 
-    (* Button *)
-    let button = GButton.button ~label:"Push me!"
-    ~packing:vbox#add () in
-    ignore(button#connect#clicked ~callback: (fun () -> prerr_endline "Ouch!"));
+    (* Frame *)
+    let frame = GBin.frame ~label:"Code" ~packing:vbox#add () in
+
+    (* Text view *)
+    ignore(GText.view ~packing:frame#add ());
 
     (* Display the windows and enter Gtk+ main loop *)
     window#add_accel_group accel_group;
