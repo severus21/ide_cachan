@@ -28,7 +28,7 @@ class ['a] tags = object(self)
   val mutable tag_list:'a tag list =[]
   method add_tag (tag:'a tag) = tag_list <- tag::tag_list
 
-  method private tag_to_list (_,values) =  
+  method private tag_to_list (_,values) =
     List.fold_left (fun prec -> function
   | TStr(x) -> prec ^ ", " ^ "S : " ^ x
   | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name ) "" values
@@ -50,22 +50,23 @@ end
 
 and ['a] set (name_tmp:string) (*: ['a] set_read_only*)= object(self)
   inherit toStringable
-  (*[Alice] I don't see the point of this line and the ide compiles 
+  (*[Alice] I don't see the point of this line and the ide compiles
     when I delete it. Are you sure you need this?*)
   (*inherit ['a] metaData*)
 
   val mutable children = []
+  method children = children
 
   (**[Alice] tags used by the IDE*)
   val meta_data_system = new metaData
 
   (**[Alice] tags defined by the user*)
   val meta_data_user = new metaData
-    
+
   method add_child (child: 'a) = children <- child::children
 
   method name = name_tmp
-  
+
   (*[Alice] You never use the to_string method of tags. Is this normal?*)
   method to_string = match children with
   | [] -> "E(" ^ self#name ^ ")"
