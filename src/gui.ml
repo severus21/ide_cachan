@@ -24,7 +24,7 @@ let gui () =
     let vbox = GPack.vbox ~packing:window#add () in
     ignore (
         window#event#connect#delete
-        ~callback: (fun _ -> false(*not (confirm_quit ())*))
+        ~callback: (fun _ -> not (confirm_quit ()))
     );
     ignore (window#connect#destroy ~callback: Main.quit);
 
