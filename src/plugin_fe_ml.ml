@@ -22,6 +22,7 @@ module Plugin_ml : Plugin_fe.Plugin = struct
     |Tl_exception(_,_) -> failwith "not implemented"
     |Tl_type(_,_) -> failwith "not implemented"
     |Tl_module (_,_) -> failwith "not implemented"
+    |Tl_sign (_,_) -> failwith "not implemented"
     |Tl_class _ -> failwith "not implemented"
     |Tl_class_and(_,_) -> failwith "not implemented"
 
