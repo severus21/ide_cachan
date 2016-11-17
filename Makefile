@@ -13,7 +13,7 @@ BUILD_DIR=debug/
 TARGET=ide
 
 default:
-	-rm $(TARGET).debug
+	-rm -f $(TARGET).debug
 	$(BUILD)$(TARGET).native
 	ln -s $(BUILD_DIR)$(SOURCE_DIR)$(TARGET).native $(TARGET).debug
 test : 
