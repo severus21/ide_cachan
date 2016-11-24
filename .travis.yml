@@ -1,6 +1,7 @@
 language: c++
+sudo: required
+
 install: ./install-dependencies.sh
-    
       
 script: 
     - make runtests
