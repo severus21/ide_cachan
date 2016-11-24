@@ -15,6 +15,7 @@ sudo apt-get install -y opam
 #eval $(opam config env)
 sudo apt-get install -qq ocaml ocaml-native-compilers camlp4-extra ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
 
+export OPAMYES=1
 opam init --yes
 opam switch 4.04.0 --yes
 echo "/home/travis/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true" >> ~/.profile
