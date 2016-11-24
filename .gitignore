@@ -6,8 +6,8 @@
 *.tex
 debug/
 release/
-ide.debug
-ide.release
+*.debug
+*.release
 *~
 *.cm*
 *.o
