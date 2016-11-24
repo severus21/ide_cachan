@@ -30,7 +30,7 @@ val file_to_ast : string ->  Parsetree.structure_item list
 (** Transform a string containing some ml code into a parsetree*)
 val string_to_ast : string -> Parsetree.structure_item list
 
-(** Prints a parstree *)
+(** Prints a parsetree *)
 val print_ast : Parsetree.structure_item list -> unit
 
 

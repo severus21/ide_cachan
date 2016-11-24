@@ -8,8 +8,8 @@ let notimp_callback = (fun () -> prerr_endline "Not Implemented");;
 (* Pops up a "Do you want to quit" dialog and returns the answer *)
 let confirm_quit () =
     let dialog = GToolbox.question_box
-        "Confirm"
-        ["Yes";"No"]
+        ~title:"Confirm"
+        ~buttons:["Yes";"No"]
         "Do you really want to quit ?" in
     match dialog with
     | 0 | 2 -> false
