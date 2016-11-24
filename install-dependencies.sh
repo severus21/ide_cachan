@@ -15,10 +15,10 @@ sudo apt-get install -y opam
 eval $(opam config env)
 sudo apt-get install -qq ocaml ocaml-native-compilers camlp4-extra ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
 
-opam --yes init
-opam --yes switch 4.04.0
+opam init --yes
+opam switch 4.04.0 --yes
 
 eval `opam config env`
-opam --yes install ${OPAM_DEPENDS}
+opam install ${OPAM_DEPENDS} --yes
 
 
