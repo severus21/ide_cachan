@@ -18,7 +18,6 @@ sudo apt-get install -qq ocaml ocaml-native-compilers camlp4-extra ${LIB_DEPENDS
 export OPAMYES=1
 opam init --yes
 opam switch 4.04.0 --yes
-echo "/home/travis/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true" >> ~/.profile
 ls ~/.opam
 ls ~/.opam/4.04.0
 ls ~/.opam/4.04.0/lib
