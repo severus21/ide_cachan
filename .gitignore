@@ -13,3 +13,5 @@ release/
 *.o
 *.cfg
 oUnit*
+ide.docdir
+_build/
