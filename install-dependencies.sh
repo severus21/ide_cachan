@@ -1,3 +1,5 @@
+#!/bin/bash
+
 OPAM_DEPENDS="ocamlfind ocambuild oUnit compiler-libs.common lablgtk2"
 LIB_DEPENDS="texlive-science tex dvips ps2pdf libgtk2.0-dev"
 COMPILER_DEPENDS="make"
