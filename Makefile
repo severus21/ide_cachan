@@ -30,7 +30,7 @@ release: clean
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)src/ide.native ide.release
 
-doc : 
+doc :clean 
 	ocamlbuild -use-ocamlfind $(PACKAGES) $(DOC_DIR)/index.html
 
 
