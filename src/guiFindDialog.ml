@@ -47,7 +47,9 @@ let find_dialog parent root =
     let fill_column () =
         model#clear ();
         let rec fill value =
-            if is_subword entry#text value#name then
+            let subword = String.lowercase_ascii entry#text in
+            let word = String.lowercase_ascii value#name in
+            if is_subword subword word then
                 let iter = model#append () in
                 model#set ~row:iter ~column:column value;
             else ();
