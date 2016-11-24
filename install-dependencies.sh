@@ -9,8 +9,9 @@ TESTING_DEPENDS=""
 #sudo apt-key add - < Release.key
 #sudo echo 'deb http://download.opensuse.org/repositories/home:/ocaml/Debian_7.0/ /' >> /etc/apt/sources.list.d/opam.list
 
+add-apt-repository ppa:avsm/ppa
 sudo apt-get update -qq
-sudo apt-get install -qq opam ocaml ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
+sudo apt-get install -qq ocaml ocaml-native-compilers camlp4-extra ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
 
 opam init
 opam switch 4.04.0
