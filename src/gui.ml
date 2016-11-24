@@ -21,7 +21,7 @@ let gui () =
     let window = GWindow.window ~resizable:true ~width:1280 ~height:720
                                     ~title:"Awesome Ocaml IDE"
                                     ~position:`CENTER () in
-    let vbox = GPack.vbox ~packing:window#add () in
+    let vbox = GPack.vbox ~homogeneous:false ~spacing:0 ~packing:window#add () in
     ignore (
         window#event#connect#delete
         ~callback: (fun _ -> false (* not (confirm_quit ())*))
@@ -33,7 +33,7 @@ let gui () =
     let factory = new GMenu.factory menubar in
     let accel_group = factory#accel_group in
     let file_menu = factory#add_submenu "File" in
-    let test_menu = factory#add_submenu "Test" in
+    let edit_menu = factory#add_submenu "Edit" in
 
     (* File menu *)
     let factory = new GMenu.factory file_menu ~accel_group in
@@ -42,13 +42,7 @@ let gui () =
     ignore(factory#add_item "Quit" ~key:_Q
         ~callback: (fun () -> if confirm_quit () then Main.quit ()));
 
-    (* Test menu *)
-    let factory = new GMenu.factory test_menu ~accel_group in
-    ignore(factory#add_item "Hello" ~key:_H
-        ~callback: (fun () -> prerr_endline "Hello"));
-
-    (* Navlist *)
-    let () =
+    let test_set =
         let a = new Core.set("A")
         and aa = new Core.set("AA")
         and ab = new Core.set("AB") in
@@ -57,8 +51,15 @@ let gui () =
         let b = new Core.set("B")
         and ba = new Core.set("BA") in
         b#add_child ba;
-        ignore(new GuiNavlist.navlist ~packing:vbox#add ~root:a);
+        a
     in
+    (* Edit menu *)
+    let factory = new GMenu.factory edit_menu ~accel_group in
+    ignore(factory#add_item "Find" ~key:_F
+        ~callback: (fun () -> ignore(GuiFindDialog.find_dialog window test_set)));
+
+    (* Navlist *)
+    ignore(new GuiNavlist.navlist ~packing:vbox#add ~root:test_set);
 
     (* Frame *)
     let frame = GBin.frame ~label:"Code" ~packing:vbox#add () in
