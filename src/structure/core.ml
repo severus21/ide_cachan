@@ -31,13 +31,6 @@ class ['a] tags = object(self)
   method add_tag name values = 
     Hashtbl.replace tag_htbl name values 
 
-  (*val mutable tag_list:'a tag list =[]
-  method add_tag (tag:'a tag) = tag_list <- tag::tag_list
-
-  
-
-  method to_string = "[" ^ (List.fold_left (fun prec b ->
-    prec ^ "; " ^ self#tag_to_list b) "" tag_list) ^ "]"*)
 
   (*[Alice] Why this name ???*)
   method private tag_to_list values =  

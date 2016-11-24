@@ -1,8 +1,0 @@
-Pour faire marcher ppx_tools, il faut d'abord évaluer 
-eval $(opam config env)
-
-Ensuite 
-ocamlfind ppx_tools/dumpast -e "1 + 2"
-
-
-Pour récupérer les Module1.Module2, utiliser le champ popen_lid.txt (si jamais Gabriel est toujours chaud)

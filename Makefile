@@ -1,12 +1,16 @@
 DEBUG_OPTION=-g
 SOURCE_DIR=src/
 
+PACKAGES=-package lablgtk2 -package oUnit -package compiler-libs.common
 BUILD=ocamlbuild -r\
 	  -build-dir "$(BUILD_DIR)" \
 	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47-48@49..59" \
-	  -package lablgtk2 -package oUnit -package compiler-libs.common\
+	  $(PACKAGES)\
 
 BUILD_DIR=debug/
+
+DOC_DIR=ide.docdir
+
 
 default: clean
 	@rm -f ide.debug
@@ -26,11 +30,15 @@ release: clean
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)src/ide.native ide.release
 
+doc : 
+	ocamlbuild -use-ocamlfind $(PACKAGES) $(DOC_DIR)/index.html
+
+
 clean:
 	@rm -rf debug/
 	@rm -rf release/
-	@rm -f oUnit*
 	@ocamlbuild -clean
 
-mrpropre: clean
-	@rm -f *.debug *.release *.dvi *.tex *.log *.pdf *.aux
+mrproper: clean
+	@rm -f *.debug *.release *.dvi *.tex *.log *.pdf *.aux oUnit*
+	@rm -rf doc/
