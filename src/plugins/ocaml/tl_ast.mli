@@ -41,6 +41,9 @@ val string_to_tl_ast : string  -> tl_ast
 val print_tl_ast : tl_ast -> unit
 
 (** Unit tests for the Tl_ast module*)
-val unit_tests : unit -> unit
+(*val unit_tests : unit -> unit*)
+val quick_tl_ast: string -> tl_ast
+val quick_tl_struct: string -> tl_struct 
 
+                               
 
