@@ -1,5 +1,20 @@
 
+(** Returns whether a is a subword of b *)
+let is_subword a b =
+    let current = ref 0 in
+    let iter c =
+        current := (String.index_from b !current c) + 1
+    in
+    try
+        String.iter iter a;
+        true
+    with
+    | Not_found -> false
+;;
+
+(** Opens the search dialog to find an item by name *)
 let find_dialog parent root =
+    (* Window *)
     let window = GWindow.dialog
         ~parent
         ~destroy_with_parent:true
@@ -10,8 +25,10 @@ let find_dialog parent root =
         ~show:true ()
     in
     let packing = window#vbox#add in
+    (* Entry *)
     let entry = GEdit.entry ~packing () in
-    let (columns, column, model, view) =
+    (* List *)
+    let (column, model) =
         let columns  = new GTree.column_list in
         let column   = columns#add Gobject.Data.caml in
         let model    = GTree.list_store columns in
@@ -24,7 +41,20 @@ let find_dialog parent root =
         let viewcol = GTree.view_column ~renderer:(renderer, []) () in
         viewcol#set_cell_data_func renderer cell_data_func;
         ignore(view#append_column viewcol);
-        (columns, column, model, view)
+        (column, model)
     in
-    ignore(root);ignore(columns);ignore(column);ignore(model);ignore(view);
-    ignore(entry#connect#notify_text ~callback:(fun _ -> ()));
+    (* Fills the list with search results *)
+    let fill_column () =
+        model#clear ();
+        let rec fill value =
+            if is_subword entry#text value#name then
+                let iter = model#append () in
+                model#set ~row:iter ~column:column value;
+            else ();
+            List.iter fill value#children
+        in
+        fill root
+    in
+    fill_column ();
+    (* Signal connection *)
+    ignore(entry#connect#notify_text ~callback:(fun _ -> fill_column ()));
