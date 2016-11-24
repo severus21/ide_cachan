@@ -3,9 +3,16 @@ Projet génie logiciel 2016 de l'ENS Cachan
 
 ## Building
 
-You will need the `lablgtk` and `ounit` modules
+To buid this project, ocaml 4.04.0 is required
+
+```bash
+opam update
+opam switch 4.04.0
 ```
-opam install lablgtk ounit
+
+You will need the `lablgtk` and `ounit` modules and `ocamlbuild`
+```bash
+opam install lablgtk ounit ocamlbuild
 ```
 
 ## Adding a new subdir in D1/../Dn
