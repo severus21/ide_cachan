@@ -19,7 +19,7 @@ export OPAMYES=1
 opam init --yes
 opam switch 4.04.0 --yes
 echo "/home/travis/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true" >> ~/.profile
-ls .opam
+ls ~/.opam
 eval $(`opam config env`)
 opam install ${OPAM_DEPENDS} --yes
 
