@@ -3,7 +3,7 @@ SOURCE_DIR=src/
 
 BUILD=ocamlbuild -r\
 	  -build-dir "$(BUILD_DIR)" \
-	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47@49..59" \
+	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47-48@49..59" \
 	  -package lablgtk2 -package oUnit -package compiler-libs.common\
 
 BUILD_DIR=debug/
@@ -32,5 +32,5 @@ clean:
 	@rm -f oUnit*
 	@ocamlbuild -clean
 
-mrproper: clean
+mrpropre: clean
 	@rm -f *.debug *.release *.dvi *.tex *.log *.pdf *.aux
