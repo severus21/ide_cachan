@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OPAM_DEPENDS="ocamlfind lablgtk ounit ocamlbuild"
-LIB_DEPENDS="texlive-science libgtk2.0-dev"
+LIB_DEPENDS="texlive-science libgtk2.0-dev libcanberra-gtk-module"
 COMPILER_DEPENDS="make"
 TESTING_DEPENDS=""
 

@@ -13,75 +13,26 @@ let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" ))
   * rewrite and factorize
   *)
 
-(** top-level structures*)
 
-(** method visibility *)                       
-type tl_visibility =  
-|Tl_private 
-|Tl_public  
-
-(* top-level structure *)   
+type tl_visibility = Tl_private|Tl_public
+ 
 type tl_struct =  
 |Tl_none (*to be removed*)
-
-(* handle caml open module
-  * name list, code
-  * ex: open A.B -> ([A,B], open A.B) *)
 |Tl_open of string list * string  
-
-(* handle variable declaration, if the left-pattern is only one identifier
-  * name, code
-  * ex: let a = 1 -> (a,let a =1) *)                            
 |Tl_var of string * string
-
-(*handle function declaration
-  * name, code
-  * ex: let f x=x -> (f, let f x=x)*)
 |Tl_fun of string * string
-
-(* handle exception declaration
-  * name, code 
-  * ex: exception E of int -> (E, exception E of int)*)
 |Tl_exception of string * string
-
-(* handle type/rec-type/and-type declaration
-  * names of types, code
-  * ex: type a=int -> ([a],type a=int)
-  * ex: type a=int and b=float -> ([a;b],  type a=int and b=float)*)
 |Tl_type of string list * string
-
-(* handle module(not rec-module, not and-module)
-  * name, ast of the module*)
 |Tl_module of string * tl_ast (*TODO : foncteur*)
-
-(* handle module signature(not rec, not and)
-  * name, declarations of types*)
 |Tl_sign of string * tl_ast(*en fait une liste de type*)
-
-(* handle class  declaration
-  * with params, with self but without and-class, withour inheritance, without type coercion
-  * name: name of the class 
-  * header: name and params (ex: class a f1 f2=object ... end -> clas a f1 f2=object)
-  * virt: flag indicate the class is virtual or not
-  * self: (ex: object ... end -> None | object(c) ... end ->Some(c) )
-  * elmts: class components
- *)                       
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 (* Not truly supported yep*)
 |Tl_class_and of tl_struct list * string
-                                    
-(** class components *)
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                           
-
-(** top-level ast type*)
 and tl_ast = tl_struct list
 
-
-let file_to_string path=
-	let input = open_in path in
-	really_input_string input (in_channel_length input)
 
 (**Opens a file and returns its ocaml ast*)
 let file_to_ast f = 
@@ -97,7 +48,8 @@ let print_ast ast =
 
 (* ***BEGIN Miscellaneous functions on locations*)
 (**Returns the substring corresponding to the location loc *)
-let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; loc_ghost = _}  ->
+let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; 
+                                         loc_ghost = _}  ->
   let cs = s.Lexing.pos_cnum and ce = e.Lexing.pos_cnum in 
   String.sub ml cs (ce - cs)
 
@@ -121,101 +73,130 @@ let open_description_to_string_list od =
    
 (**
   * @param class_expr of a class
-  * @return class_struct, header
+  * @return caml class_struct, header
   *)
 let rec get_class_struct (_:Lexing.position) = function 
-  |Pcl_fun(_,_,pattern, child_ast)-> get_class_struct pattern.ppat_loc.Location.loc_end child_ast.pcl_desc(*on est entrain de parser les arguments de la classe, child => child ast*)
-  |Pcl_structure(ast)-> ast.pcstr_self.ppat_loc.Location.loc_start, ast 
-  |_-> not_define "Pcl_* not supported"                                 
+    |Pcl_fun(_,_,pattern, child_ast)->( 
+       let loc_end =  pattern.ppat_loc.Location.loc_end in
+       get_class_struct loc_end child_ast.pcl_desc(*on est entrain de parser les arguments de la classe, child => child ast*)
+    )
+    |Pcl_structure(ast)->(
+       ast.pcstr_self.ppat_loc.Location.loc_start, ast 
+    )                                                 
+    |_-> not_define "Pcl_* not supported"                                 
 
 (**
   * @param Pcl_structure c_struct.pcstr_fields.listfield
   * @return (attrs list, methods list)
   *)
-let rec class_fields_to_attrs_methods ml elmts= function
-  |[]-> List.rev elmts
-  |{pcf_desc=Pcf_method(loc0, f_private, expr);pcf_loc=_;pcf_attributes=_}::t ->(
-let loc1 = (match expr with |Cfk_virtual ct->ct.ptyp_loc |Cfk_concrete(_,expr1) ->expr1.pexp_loc) in
+let class_fields_to_attrs_methods ml fields=
+    let field_to_cl_field pcl_struct=
+        match pcl_struct.pcf_desc with
+        |Pcf_method(loc0, f_private, expr)->(
+            let loc1 =( match expr with
+                |Cfk_virtual ct->ct.ptyp_loc 
+                |Cfk_concrete(_,expr1) ->expr1.pexp_loc
+            ) in
 
-    let dmethod = Tl_fun(loc0.txt, get_str_from_location ml loc1) in
-    let dvisibility =  (match f_private with|Private->Tl_private |_-> Tl_public) in 
-      class_fields_to_attrs_methods ml ((Cl_method( dmethod, dvisibility) )::elmts) t
-  )
-  |{pcf_desc=Pcf_val(loc, _, expr);pcf_loc=_;pcf_attributes=_}::t ->(
-     let loc1 = (match expr with |Cfk_virtual ct->ct.ptyp_loc |Cfk_concrete(_,expr1) ->expr1.pexp_loc) in
-     let dattr = Tl_var(loc.txt, get_str_from_location ml loc1) in
-    class_fields_to_attrs_methods ml ((Cl_attribut dattr)::elmts) t
-  )
-  |_-> not_define "Pcf_* not supported"  
+            let dmethod = Tl_fun(loc0.txt, get_str_from_location ml loc1) in
+
+            let dvisibility =( match f_private with
+                |Private->Tl_private 
+                |_-> Tl_public) in 
+
+            Cl_method( dmethod, dvisibility) 
+        )
+        |Pcf_val(loc, _, expr)->(
+            let loc1 =( match expr with 
+                |Cfk_virtual ct->ct.ptyp_loc 
+                |Cfk_concrete(_,expr1) ->expr1.pexp_loc
+            ) in
+
+            let dattr = Tl_var(loc.txt, get_str_from_location ml loc1) in
+
+            (Cl_attribut dattr)
+        )
+        |_-> not_define "Pcf_* not supported" 
+    in
+    List.rev (List.map field_to_cl_field fields)    
 
 let class_to_tl_class ml = function({pci_virt=virt; pci_params=_; 
                                     pci_name=name; pci_expr=expr; pci_loc=loc;
                                     pci_attributes=_}:class_declaration)->
-  
-  let header_end, struct_ast = get_class_struct expr.pcl_loc.Location.loc_start expr.pcl_desc in    
-  let elmts = class_fields_to_attrs_methods ml [] struct_ast.pcstr_fields in  
-  let self = begin
-    match struct_ast.pcstr_self.ppat_desc with |Ppat_any -> None |Ppat_var str_loc ->Some(str_loc.txt)|_->not_define "Ppat_* not supported for self" end in   
- Tl_class {
-    name=name.txt;
+    
+    let loc_start = expr.pcl_loc.Location.loc_start in
+    let header_end, struct_ast = get_class_struct loc_start expr.pcl_desc in    
+    let elmts = class_fields_to_attrs_methods ml struct_ast.pcstr_fields in  
+    
+    (*detect if there is some _ste in class ...= object(_str) ... end*)
+    let self = begin
+        match struct_ast.pcstr_self.ppat_desc with 
+            |Ppat_any -> None 
+            |Ppat_var str_loc ->Some(str_loc.txt)
+            |_->not_define "Ppat_* not supported for self" 
+    end in   
 
-    header=get_str_from_location ml ({Location.loc_start=loc.Location.loc_start;Location.loc_end=header_end; Location.loc_ghost=false});
-    virt=(virt == Virtual);
-    self=self;
-    elmts=elmts;
-  }
+    Tl_class {
+        name = name.txt;
+        header = get_str_from_location ml (
+            {Location.loc_start=loc.Location.loc_start; loc_end=header_end; 
+            loc_ghost=false}
+        );
+        virt = (virt == Virtual);
+        self = self;
+        elmts = elmts;
+    }
 
 (**
   * @param signature(signature_item list )
   *)
-let rec sign_to_tl_sign ml types=function
-  |[] -> List.rev types
-  |{psig_desc=desc;psig_loc=_}::t->(
-    match desc with
-      |Psig_value {pval_name=name;pval_type=_;pval_prim=_;pval_attributes=_;pval_loc=loc}->(
-         let tmp = Tl_type([name.txt], get_str_from_location ml loc) in
-         sign_to_tl_sign ml (tmp::types) t  
-      )
-      |_-> not_define "Psig_* not defined"  
-  )
+let sign_to_tl_sign ml signatures=
+    let caml_to_tl {psig_desc=desc;psig_loc=_}=
+        match desc with
+        |Psig_value value->
+            Tl_type([value.pval_name.txt], get_str_from_location ml value.pval_loc)
+        |_-> not_define "Psig_* not defined"  
+    in 
+    
+    List.rev (List.map caml_to_tl signatures)  
 
-let rec struct_to_tl_struct ml  = function {pstr_desc = struct_item; pstr_loc = loc} ->
-  begin
+let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
+    let body = get_str_from_location ml loc in
+    
     match struct_item with 
-    |Pstr_open open_desc ->  Tl_open(open_description_to_string_list open_desc.popen_lid,
-				     get_str_from_location ml loc)
+    |Pstr_open open_desc ->  
+        Tl_open(open_description_to_string_list open_desc.popen_lid, body)
     |Pstr_value(_,  value::_)->((*pour l'instant on ne traite que la première*)
         match value.pvb_pat.ppat_desc  with 
-        |Ppat_var loc_var->(
-            let name = loc_var.txt and expr = (get_str_from_location ml loc) in
+        |Ppat_var {txt=name;_}->(
             match value.pvb_expr.pexp_desc with
-            | Pexp_function _ | Pexp_fun _-> Tl_fun(name, expr)   
-            | _ -> Tl_var(name, expr)   
+            | Pexp_function _ | Pexp_fun _-> Tl_fun(name, body)   
+            | _ -> Tl_var(name, body)   
         )(*comment faire avec les autrs patterns???*)
         |_->Tl_none                  
     )
-    |Pstr_exception e->Tl_exception( e.pext_name.txt, get_str_from_location ml loc)
-    |Pstr_type(_,decls)->Tl_type((List.map (function d->d.ptype_name.txt) decls), 
-       get_str_from_location ml loc)
+    |Pstr_exception {pext_name={txt=name;_};_}->
+        Tl_exception( name, body)
+    |Pstr_type(_,decls)->
+        Tl_type((List.map (function d->d.ptype_name.txt) decls), body)
     |Pstr_class decls->(
         let cls = (List.map (function d->class_to_tl_class ml d) decls) in
-        Tl_class_and (cls, get_str_from_location ml loc)
+        Tl_class_and(cls, body)
     )
-    |Pstr_module {pmb_name=loc; pmb_expr=expr; pmb_attributes=_; pmb_loc=_}->(
+    |Pstr_module {pmb_name=_loc; pmb_expr=expr;_}->(
         match expr.pmod_desc with
-        |Pmod_structure s-> Tl_module(loc.txt, ast_to_tl_ast ml s)
+        |Pmod_structure s-> Tl_module(_loc.txt, ast_to_tl_ast ml s)
         |_-> not_define "Pmod_* not supported"                  
     )
-    |Pstr_modtype {pmtd_name=name; pmtd_type=opt_m_type; pmtd_attributes=_; pmtd_loc=_}->(
+    |Pstr_modtype {pmtd_name={txt=name;_}; pmtd_type=opt_m_type;_}->(
         match opt_m_type with 
-        |None -> Tl_sign( name.txt, [])   
+        |None -> Tl_sign( name, [])   
         |Some m_type ->
             match m_type.pmty_desc with 
-              |Pmty_signature s -> Tl_sign( name.txt, sign_to_tl_sign ml [] s)
+              |Pmty_signature s -> Tl_sign( name, sign_to_tl_sign ml s)
               |_-> not_define "Pmty_* not supported"                        
      )
     |_ -> Tl_none
-  end
 
 
 
