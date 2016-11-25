@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPAM_DEPENDS="lablgtk ounit ocamlbuild"
+OPAM_DEPENDS="ocamlfind lablgtk ounit ocamlbuild"
 LIB_DEPENDS="texlive-science libgtk2.0-dev"
 COMPILER_DEPENDS="make"
 TESTING_DEPENDS=""
