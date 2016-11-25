@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPAM_DEPENDS="ocamlfind ocambuild oUnit compiler-libs.common lablgtk2"
+OPAM_DEPENDS="lablgtk ounit ocamlbuild"
 LIB_DEPENDS="texlive-science libgtk2.0-dev"
 COMPILER_DEPENDS="make"
 TESTING_DEPENDS=""
@@ -11,19 +11,13 @@ TESTING_DEPENDS=""
 
 sudo add-apt-repository --yes ppa:avsm/ppa
 sudo apt-get update -qq
-sudo apt-get install -y opam
-#eval $(opam config env)
-sudo apt-get install -qq ocaml ocaml-native-compilers camlp4-extra ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
+sudo apt-get install -qq ocaml ocaml-native-compilers camlp4-extra opam ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
 
 export OPAMYES=1
-opam init --yes
-opam switch 4.04.0 --yes
-ls ~/.opam
-ls ~/.opam/4.04.0
-ls ~/.opam/4.04.0/lib
-mkdir -p ~/.opam/4.04.0/lib
+opam init
+opam switch 4.04.0
+eval `opam config env`
 
-eval $(`opam config env`)
-opam install ${OPAM_DEPENDS} --yes
+opam install ${OPAM_DEPENDS}
 
 
