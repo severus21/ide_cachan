@@ -25,6 +25,11 @@ test : clean
 runtests : test
 	./test.debug
 
+plugins: clean
+	@rm -f plugin.debug
+	$(BUILD) src/plugins/plugin.native
+	@ln -s $(BUILD_DIR)/src/plugins/plugin.native plugin.debug
+
 release: clean
 	@rm -f ide.release
 	$(BUILD) src/ide.native

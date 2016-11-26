@@ -20,8 +20,8 @@ type tl_struct =
 |Tl_exception of string * string (** handle exception declaration
                                    - name, code 
                                    - ex: exception E of int -> (E, exception E of int)*)
-|Tl_type of string list * string (** handle type/rec-type/and-type declaration
-                                   - names of types, code
+|Tl_type of string list *string (** handle type/rec-type/and-type declaration
+                                   - names of types, is_rec, code
                                    - ex: type a=int -> ([a],type a=int)
                                    - ex: type a=int and b=float -> ([a;b],  type a=int and b=float)*)
 
@@ -30,7 +30,8 @@ type tl_struct =
 
 |Tl_sign of string * tl_ast (** handle module signature(not rec, not and)
                               - name, declarations of types*)
-
+|Tl_constraint of string * tl_struct * tl_struct (** handle module with signature
+                                             -name, module, signature*)
 |Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list} (** handle class  declaration
              - with params, with self but without and-class, withour inheritance, without type coercion
              - name: name of the class 

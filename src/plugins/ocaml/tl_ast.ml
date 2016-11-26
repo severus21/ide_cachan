@@ -25,6 +25,7 @@ type tl_struct =
 |Tl_type of string list * string
 |Tl_module of string * tl_ast (*TODO : foncteur*)
 |Tl_sign of string * tl_ast(*en fait une liste de type*)
+|Tl_constraint of string * tl_struct* tl_struct                       
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 (* Not truly supported yep*)
 |Tl_class_and of tl_struct list * string
@@ -146,23 +147,50 @@ let class_to_tl_class ml = function({pci_virt=virt; pci_params=_;
         self = self;
         elmts = elmts;
     }
+(*body : code des types, function is_rec*)      
+let type_declarations_to_tl t_dcls body=
+    Tl_type((List.map (function d->d.ptype_name.txt) t_dcls), body)
+
+let value_description_to_tl_var ml value=
+  Tl_var(value.pval_name.txt, get_str_from_location ml value.pval_loc)
 
 (**
   * @param signature(signature_item list )
   *)
 let sign_to_tl_sign ml signatures=
-    let caml_to_tl {psig_desc=desc;psig_loc=_}=
+    let caml_to_tl {psig_desc=desc;psig_loc=loc}=
         match desc with
-        |Psig_value value->
-            Tl_type([value.pval_name.txt], get_str_from_location ml value.pval_loc)
+        |Psig_value value-> value_description_to_tl_var ml value(* val .. = ..*)
+        |Psig_type(_, t_dcls)->((*type declaration in sign ... end*)
+            type_declarations_to_tl t_dcls (get_str_from_location ml loc) 
+        )   
         |_-> not_define "Psig_* not defined"  
     in 
     
-    List.rev (List.map caml_to_tl signatures)  
+    (List.map caml_to_tl signatures)  
 
 let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     let body = get_str_from_location ml loc in
     
+    (* args Pmod_, name provient du parent* *)
+    let rec pmod_to_tl name  =function
+        |Pmod_structure s-> Tl_module(name, ast_to_tl_ast ml s)
+        |Pmod_constraint (m, mt)->(
+            Tl_constraint(name, (pmod_to_tl name m.pmod_desc), 
+                          (pmty_to_tl name (Some mt)))
+        )
+        |_-> not_define "Pmod_* not supported"
+    (* name, option(module_type) *)           
+    and pmty_to_tl name =function
+        |None -> Tl_sign( name, [])   
+        |Some m_type ->(
+            match m_type.pmty_desc with 
+            |Pmty_signature s -> Tl_sign( name, sign_to_tl_sign ml s)
+            |_-> not_define "Pmty_* not supported" 
+        )           
+    in
+      
+
     match struct_item with 
     |Pstr_open open_desc ->  
         Tl_open(open_description_to_string_list open_desc.popen_lid, body)
@@ -177,25 +205,14 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     )
     |Pstr_exception {pext_name={txt=name;_};_}->
         Tl_exception( name, body)
-    |Pstr_type(_,decls)->
-        Tl_type((List.map (function d->d.ptype_name.txt) decls), body)
+    |Pstr_type(_,t_dcls)-> type_declarations_to_tl t_dcls body
     |Pstr_class decls->(
         let cls = (List.map (function d->class_to_tl_class ml d) decls) in
         Tl_class_and(cls, body)
     )
-    |Pstr_module {pmb_name=_loc; pmb_expr=expr;_}->(
-        match expr.pmod_desc with
-        |Pmod_structure s-> Tl_module(_loc.txt, ast_to_tl_ast ml s)
-        |_-> not_define "Pmod_* not supported"                  
-    )
-    |Pstr_modtype {pmtd_name={txt=name;_}; pmtd_type=opt_m_type;_}->(
-        match opt_m_type with 
-        |None -> Tl_sign( name, [])   
-        |Some m_type ->
-            match m_type.pmty_desc with 
-              |Pmty_signature s -> Tl_sign( name, sign_to_tl_sign ml s)
-              |_-> not_define "Pmty_* not supported"                        
-     )
+    |Pstr_module m -> pmod_to_tl m.pmb_name.txt m.pmb_expr.pmod_desc
+    |Pstr_modtype mt -> pmty_to_tl mt.pmtd_name.txt mt.pmtd_type
+
     |_ -> Tl_none
 
 
@@ -221,9 +238,16 @@ and tl_struct_to_str =function
     |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
     |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
-    |Tl_type(_,value)->Format.sprintf "%s\n" value
-    |Tl_sign(name,ast)->Format.sprintf "module %s = sign\n%s\nend\n" name (tl_ast_to_str ast)
-    |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%s\nend\n" name (tl_ast_to_str ast)                     
+    |Tl_type(_, value)->Format.sprintf "%s\n" value
+    |Tl_sign(name,ast)->Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
+    |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%send\n" name (tl_ast_to_str ast)                     
+    |Tl_constraint(name, Tl_module(_,m), Tl_sign(_,mt))->(
+        Format.sprintf "module %s : sig\n\
+          %s\
+          end = struct \n\
+          %s\
+          end\n" name (tl_ast_to_str mt) (tl_ast_to_str m)      
+    )   
     |Tl_class cl ->(
        let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
@@ -231,6 +255,7 @@ and tl_struct_to_str =function
     )
     |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s\n%s" head  (tl_struct_to_str cl)) "" cls 
     |Tl_none -> ""
+    |_->failwith "Bad tree"               
 
 and tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
 
