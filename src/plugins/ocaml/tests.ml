@@ -13,12 +13,29 @@ let test_suites ()=
     let ml_forest_t = "type 'a tree=Nil|Node of 'a tree*'a tree*'a and \
     'a forest='a tree list" in
     let ml_hello_c =  "class hello = object(self) val hello:string=\"hello\" \
-    end" in
+    end" in(*
     let ml_hello_m =  "module Hello = struct \
         let message = \"Hello\" \
         let hello () = print_endline message \
+    end" in*)
+    let ml_even_m = "module Even = struct \
+        type t = Zero | Succ of int \
+        let alpha = Zero \
+        let hello () = print_endline \"Even\" \
     end" in
-     
+    let ml_even_s = "module type Even = sig \
+        type t = Zero | Succ of int \
+        val alpha : t \
+    end" in             
+    let ml_even_c = "module Even : sig \
+        type t = Zero | Succ of int \
+        val alpha : t \
+    end = struct \
+        type t = Zero | Succ of int \
+        let alpha = Zero \
+        let hello () = print_endline \"Even\" \
+    end" in
+
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -57,10 +74,23 @@ let test_suites ()=
         ], ml_hello_c))
     ]);
     ("suite_module", [
-        ("default", ml_hello_m, Tl_module( "Hello", [
-            Tl_var("message", "let message = \"Hello\""); 
-            Tl_fun("hello", "let hello () = print_endline message")
-        ]))      
+        ("default", ml_even_m, Tl_module( "Even", [
+            Tl_type(["t"], "type t = Zero | Succ of int");
+            Tl_var("alpha", "let alpha = Zero");
+            Tl_fun("hello", "let hello () = print_endline \"Even\"")
+        ]));
+        ("signature", ml_even_s, Tl_sign("Even", [
+            Tl_type(["t"], "type t = Zero | Succ of int");
+            Tl_var("alpha", "val alpha : t")  
+        ])); 
+        ("constraint", ml_even_c, Tl_constraint("Even", Tl_module("Even", [
+                Tl_type(["t"], "type t = Zero | Succ of int");
+                Tl_var("alpha", "let alpha = Zero");
+                Tl_fun("hello", "let hello () = print_endline \"Even\"")
+            ]), Tl_sign("Even", [
+                Tl_type(["t"], "type t = Zero | Succ of int");
+                Tl_var("alpha", "val alpha : t")  
+        ])))
     ]);
 ]
 
