@@ -17,6 +17,11 @@ export OPAMYES=1
 opam init
 opam switch 4.04.0
 eval `opam config env`
+echo "let () =
+        try Topdirs.dir_directory (Sys.getenv "OCAML_TOPLEVEL_PATH")
+        with Not_found -> ()
+  ;;">> ~/.ocamlinit
+
 
 opam install ${OPAM_DEPENDS}
 
