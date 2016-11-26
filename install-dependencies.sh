@@ -11,7 +11,7 @@ TESTING_DEPENDS=""
 
 sudo add-apt-repository --yes ppa:avsm/ppa
 sudo apt-get update -qq
-sudo apt-get install -qq  ${LIB_DEPENDS} ${COMPILER_DEPENDS} ${TESTING_DEPENDS}
+sudo apt-get install -qq ${COMPILER_DEPENDS}  ${LIB_DEPENDS} ${TESTING_DEPENDS}
 
 export OPAMYES=1
 opam init
