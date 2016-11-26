@@ -17,6 +17,7 @@ export OPAMYES=1
 opam init
 opam switch 4.04.0
 eval `opam config env`
+echo "/home/travis/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true" >> ~/.profile
 
 echo "let () =
         try Topdirs.dir_directory (Sys.getenv "OCAML_TOPLEVEL_PATH")
