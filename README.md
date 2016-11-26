@@ -1,4 +1,4 @@
-# ide_cachan
+# ide_cachan [![Build Status](https://travis-ci.org/severus21/ide_cachan.svg?branch=master)](https://travis-ci.org/severus21/ide_cachan)
 Projet génie logiciel 2016 de l'ENS Cachan
 
 ## Building
