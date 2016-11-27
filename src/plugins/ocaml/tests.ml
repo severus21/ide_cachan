@@ -35,7 +35,16 @@ let test_suites ()=
         let alpha = Zero \
         let hello () = print_endline \"Even\" \
     end" in
-
+    let ml_even_odd_mr = "module rec Even : sig \
+        type t = Zero | Succ of Odd.t \
+    end = struct \
+        type t = Zero | Succ of Odd.t \
+    end \
+    and Odd : sig \
+        type t = Succ of Even.t \
+    end = struct \
+        type t = Succ of Even.t \
+    end" in  
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -90,7 +99,20 @@ let test_suites ()=
             ]), Tl_sign("Even", [
                 Tl_type(["t"], "type t = Zero | Succ of int");
                 Tl_var("alpha", "val alpha : t")  
-        ])))
+        ])));
+        ("rec", ml_even_odd_mr, Tl_recmodule([
+            Tl_constraint("Even", Tl_module("Even",[
+                Tl_type(["t"], "type t = Zero | Succ of Odd.t") 
+            ]), Tl_sign("Even",[
+                Tl_type(["t"], "type t = Zero | Succ of Odd.t") 
+            ]));
+            Tl_constraint("Odd", Tl_module("Odd",[
+                Tl_type(["t"], "type t = Succ of Even.t") 
+            ]), Tl_sign("Odd",[
+                Tl_type(["t"], "type t = Succ of Even.t") 
+            ]));
+
+        ], ml_even_odd_mr))
     ]);
 ]
 
