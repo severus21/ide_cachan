@@ -12,12 +12,13 @@ let make_suites name suites =
 let test_suites ()=
     let ml_forest_t = "type 'a tree=Nil|Node of 'a tree*'a tree*'a and \
     'a forest='a tree list" in
-    let ml_hello_c =  "class hello = object(self) val hello:string=\"hello\" \
-    end" in(*
-    let ml_hello_m =  "module Hello = struct \
-        let message = \"Hello\" \
-        let hello () = print_endline message \
-    end" in*)
+    let ml_hello_c =  "class hello = object(self) \
+        val hello:string=\"hello\" \
+        val alpha = 12 \ 
+        val arf = ref true \
+        method set (key:string) = 12 \
+        initializer(arf:=false) \
+    end" in
     let ml_even_m = "module Even = struct \
         type t = Zero | Succ of int \
         let alpha = Zero \
@@ -77,7 +78,11 @@ let test_suites ()=
                 virt=false; 
                 self=Some("self"); 
                 elmts=[
-                    Cl_attribut(Tl_var("hello", "hello:string=\"hello\""))
+                    Cl_attribut(Tl_var("hello", "hello:string=\"hello\""));
+                    Cl_attribut(Tl_var("alpha", "alpha = 12"));
+                    Cl_attribut(Tl_var("arf", "arf = ref true"));
+                    Cl_method(Tl_fun("set", "set (key:string) = 12"), Tl_public);
+                    Cl_init("(arf:=false)")
                 ]
             })
         ], ml_hello_c))
