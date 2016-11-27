@@ -48,6 +48,8 @@ type tl_struct =
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                            
+|Cl_init of string (** describe intializer
+                     - code *) 
 
 (** Top-level ast type*)
 and tl_ast = tl_struct list

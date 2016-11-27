@@ -32,7 +32,8 @@ type tl_struct =
 |Tl_class_and of tl_struct list * string
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
-|Cl_attribut of tl_struct                           
+|Cl_attribut of tl_struct                  
+|Cl_init of string                  
 and tl_ast = tl_struct list
 
 
@@ -71,6 +72,11 @@ let open_description_to_string_list od =
     |Longident.Lapply(_,_) -> failwith "I don't know what is this (Alice) (raised in tl_ast.ml)"
   in
   od_to_sl od.txt []
+
+let pexp_to_tl name body=function{pexp_desc=desc;_}->
+    match desc with  
+    | Pexp_function _ | Pexp_fun _-> Tl_fun(name, body)   
+    | _ -> Tl_var(name, body)   
 
    
 (**
@@ -114,13 +120,18 @@ let class_fields_to_attrs_methods ml fields=
                 |Cfk_concrete(_,expr1) ->expr1.pexp_loc
             ) in
 
-            let dattr = Tl_var(loc.txt, get_str_from_location ml loc1) in
+            let loc2= {Location.loc_start=loc.loc.Location.loc_start; loc_end=loc1.Location.loc_end; loc_ghost=false} in
+
+            let dattr = Tl_var(loc.txt, get_str_from_location ml loc2) in
 
             (Cl_attribut dattr)
         )
+        |Pcf_initializer exp->(
+             Cl_init (get_str_from_location ml exp.pexp_loc)
+        )    
         |_-> not_define "Pcf_* not supported" 
     in
-    List.rev (List.map field_to_cl_field fields)    
+    List.map field_to_cl_field fields    
 
 let class_to_tl_class ml = function({pci_virt=virt; pci_params=_; 
                                     pci_name=name; pci_expr=expr; pci_loc=loc;
@@ -197,11 +208,11 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
         Tl_open(open_description_to_string_list open_desc.popen_lid, body)
     |Pstr_value(_,  value::_)->((*pour l'instant on ne traite que la première*)
         match value.pvb_pat.ppat_desc  with 
-        |Ppat_var {txt=name;_}->(
-            match value.pvb_expr.pexp_desc with
+        |Ppat_var {txt=name;_}-> pexp_to_tl name body value.pvb_expr
+           (* match value.pvb_expr.pexp_desc with
             | Pexp_function _ | Pexp_fun _-> Tl_fun(name, body)   
             | _ -> Tl_var(name, body)   
-        )(*comment faire avec les autrs patterns???*)
+            *)(*comment faire avec les autrs patterns???*)
         |_->Tl_none                  
     )
     |Pstr_exception {pext_name={txt=name;_};_}->
@@ -233,11 +244,12 @@ let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
 
 (* ***BEGIN Printing of a tl_ast*)
 let rec class_elmt_to_str head= function
-    |Cl_attribut attr ->  Format.sprintf "%s\tval %s" head (tl_struct_to_str attr)  
-    |Cl_method (m, f_v)->( Format.sprintf "%s\t%smethod %s" head 
+    |Cl_attribut attr ->  Format.sprintf "%sval %s|" head (tl_struct_to_str attr)  
+    |Cl_method (m, f_v)->( Format.sprintf "%s%s method %s" head 
         (match f_v with |Tl_private->"private "|_->"") 
         (tl_struct_to_str m)
-    )     
+    )
+    |Cl_init body-> Format.sprintf "%sinitializer |%s|" head body              
 and tl_struct_to_str =function 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
     |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
