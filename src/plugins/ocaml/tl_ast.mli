@@ -25,13 +25,15 @@ type tl_struct =
                                    - ex: type a=int -> ([a],type a=int)
                                    - ex: type a=int and b=float -> ([a;b],  type a=int and b=float)*)
 
-|Tl_module of string * tl_ast (** handle module(not rec-module, not and-module)
+|Tl_module of string * tl_ast (** handle module(not rec-module)
                                 -* name, ast of the module*)
 
-|Tl_sign of string * tl_ast (** handle module signature(not rec, not and)
+|Tl_sign of string * tl_ast (** handle module signature(not rec)
                               - name, declarations of types*)
 |Tl_constraint of string * tl_struct * tl_struct (** handle module with signature
                                              -name, module, signature*)
+|Tl_recmodule of tl_ast * string (** handle rec-module
+                                   -module list, code*)
 |Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list} (** handle class  declaration
              - with params, with self but without and-class, withour inheritance, without type coercion
              - name: name of the class 

@@ -25,7 +25,8 @@ type tl_struct =
 |Tl_type of string list * string
 |Tl_module of string * tl_ast (*TODO : foncteur*)
 |Tl_sign of string * tl_ast(*en fait une liste de type*)
-|Tl_constraint of string * tl_struct* tl_struct                       
+|Tl_constraint of string * tl_struct* tl_struct       
+|Tl_recmodule of tl_ast * string                                        
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 (* Not truly supported yep*)
 |Tl_class_and of tl_struct list * string
@@ -212,7 +213,11 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     )
     |Pstr_module m -> pmod_to_tl m.pmb_name.txt m.pmb_expr.pmod_desc
     |Pstr_modtype mt -> pmty_to_tl mt.pmtd_name.txt mt.pmtd_type
+    |Pstr_recmodule m_list ->(
+        Tl_recmodule(List.map (function m->pmod_to_tl m.pmb_name.txt 
+             m.pmb_expr.pmod_desc) m_list, body)
 
+    )   
     |_ -> Tl_none
 
 
