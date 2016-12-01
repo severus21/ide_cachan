@@ -6,11 +6,12 @@
 *.tex
 debug/
 release/
-ide.debug
-ide.release
+*.debug
+*.release
 *~
 *.cm*
 *.o
 *.cfg
-src/structure/coeur
 oUnit*
+ide.docdir
+_build/

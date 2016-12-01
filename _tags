@@ -1,0 +1,5 @@
+<src> or <tests>: include
+<*.ml> : annot
+"src/plugins":include
+<src/plugins/*.cmx>: for-pack(Plugins)
+<src/plugins/ocaml/*.cmx>: for-pack(Plugins.Ocaml)
