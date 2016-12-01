@@ -202,7 +202,7 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
             let header_end, expr = find_functor_header _loc.Location.loc_end m_expr func in
             let header_loc = {Location.loc_start=loc.Location.loc_start; 
                               loc_end=header_end; loc_ghost=false} in
-            let header = get_str_from_location ml header_loc in   
+            let header = String.trim (get_str_from_location ml header_loc) in   
             
             let body =  (pmod_to_tl {txt=""; loc=loc}  expr.pmod_desc) in
             match body with 
