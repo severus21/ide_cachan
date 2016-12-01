@@ -45,7 +45,18 @@ let test_suites ()=
         type t = Succ of Even.t \
     end = struct \
         type t = Succ of Even.t \
-    end" in  
+    end" in 
+    (*let ml_comparable_s="module type Comparable = sig \
+        type t \
+        val compare : t -> t -> int \
+    end" in*)                               
+    let ml_compare_f = "module OrderList (T:Comparable) = struct \
+        exception Empty \
+        type content = T.t \
+        type t = content list ref \
+        let comp = T.compare \
+    end" in
+
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -117,7 +128,14 @@ let test_suites ()=
                 Tl_type(["t"], "type t = Succ of Even.t") 
             ]));
 
-        ], ml_even_odd_mr))
+        ], ml_even_odd_mr));
+        ("functor", ml_compare_f, Tl_functor("OrderList", 
+            "OrderList (T:Comparable) =", [
+                Tl_exception("Empty", "exception Empty");
+                Tl_type(["content"], "type content = T.t");
+                Tl_type(["t"], "type t = content list ref");
+                Tl_var("comp", "let comp = T.compare")
+            ]))
     ]);
 ]
 
