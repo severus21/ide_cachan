@@ -32,6 +32,10 @@ type tl_struct =
                               - name, declarations of types*)
 |Tl_constraint of string * tl_struct * tl_struct (** handle module with signature
                                              -name, module, signature*)
+|Tl_functor of string * string* tl_ast (** handle functor(warning thay are currified)
+                                            -name, header, body
+                                            -ex module F (T:Alpha) = struct .. end -> ("F", "F (T:Alpha)=", "...")                                   
+ *)
 |Tl_recmodule of tl_ast * string (** handle rec-module
                                    -module list, code*)
 |Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list} (** handle class  declaration
@@ -43,7 +47,6 @@ type tl_struct =
              - elmts: class components
  *)
 |Tl_class_and of tl_struct list*string
-
 (** class components *)
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
