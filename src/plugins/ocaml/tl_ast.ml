@@ -25,7 +25,8 @@ type tl_struct =
 |Tl_type of string list * string
 |Tl_module of string * tl_ast (*TODO : foncteur*)
 |Tl_sign of string * tl_ast(*en fait une liste de type*)
-|Tl_constraint of string * tl_struct* tl_struct       
+|Tl_constraint of string * tl_struct* tl_struct
+|Tl_functor of string * string * tl_ast                                      
 |Tl_recmodule of tl_ast * string                                        
 |Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 (* Not truly supported yep*)
@@ -181,16 +182,33 @@ let sign_to_tl_sign ml signatures=
     
     (List.map caml_to_tl signatures)  
 
+let rec find_functor_header loc_end m_expr = function
+|Pmod_functor(_,_, m_expr0)->(
+    find_functor_header m_expr0.pmod_loc.Location.loc_start m_expr0 m_expr0.pmod_desc
+)    
+|_->loc_end, m_expr
+
 let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     let body = get_str_from_location ml loc in
     
     (* args Pmod_, name provient du parent* *)
-    let rec pmod_to_tl name  =function
+    let rec pmod_to_tl ({txt=name;loc=loc} as args )  =function
         |Pmod_structure s-> Tl_module(name, ast_to_tl_ast ml s)
         |Pmod_constraint (m, mt)->(
-            Tl_constraint(name, (pmod_to_tl name m.pmod_desc), 
+                Tl_constraint(name, (pmod_to_tl args m.pmod_desc), 
                           (pmty_to_tl name (Some mt)))
         )
+        |Pmod_functor({loc=_loc;_}, _, m_expr) as func->(
+            let header_end, expr = find_functor_header _loc.Location.loc_end m_expr func in
+            let header_loc = {Location.loc_start=loc.Location.loc_start; 
+                              loc_end=header_end; loc_ghost=false} in
+            let header = get_str_from_location ml header_loc in   
+            
+            let body =  (pmod_to_tl {txt=""; loc=loc}  expr.pmod_desc) in
+            match body with 
+            |Tl_module(_, m_body)->Tl_functor(name, header, m_body)
+            |_->Tl_functor(name, header, [body])                         
+        )   
         |_-> not_define "Pmod_* not supported"
     (* name, option(module_type) *)           
     and pmty_to_tl name =function
@@ -198,6 +216,10 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
         |Some m_type ->(
             match m_type.pmty_desc with 
             |Pmty_signature s -> Tl_sign( name, sign_to_tl_sign ml s)
+            |Pmty_ident{txt=lg_ident;_}->(*par extrapolation depuis les foncteurs*)
+               Tl_type( [name], List.fold_left (fun str x->str^x) 
+                              "" (Longident.flatten lg_ident))
+              (*TODO il faudra créer un autre type caml pour en capsuler les types et non utiliser tl_type : type defini à top level*)                             
             |_-> not_define "Pmty_* not supported" 
         )           
     in
@@ -222,15 +244,17 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
         let cls = (List.map (function d->class_to_tl_class ml d) decls) in
         Tl_class_and(cls, body)
     )
-    |Pstr_module m -> pmod_to_tl m.pmb_name.txt m.pmb_expr.pmod_desc
+    |Pstr_module m -> pmod_to_tl m.pmb_name m.pmb_expr.pmod_desc
     |Pstr_modtype mt -> pmty_to_tl mt.pmtd_name.txt mt.pmtd_type
     |Pstr_recmodule m_list ->(
-        Tl_recmodule(List.map (function m->pmod_to_tl m.pmb_name.txt 
+        Tl_recmodule(List.map (function m->pmod_to_tl m.pmb_name 
              m.pmb_expr.pmod_desc) m_list, body)
 
     )   
     |_ -> Tl_none
 
+
+(**TODO : faire une nouvelle passe de simplification vers un nouvel ast **)
 
 
 (*ml is a string containing the whole file from which ast was created *)
@@ -257,14 +281,17 @@ and tl_struct_to_str =function
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_, value)->Format.sprintf "%s\n" value
     |Tl_sign(name,ast)->Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
-    |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%send\n" name (tl_ast_to_str ast)                     
+    |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%send\n" name (tl_ast_to_str ast) 
     |Tl_constraint(name, Tl_module(_,m), Tl_sign(_,mt))->(
         Format.sprintf "module %s : sig\n\
           %s\
           end = struct \n\
           %s\
           end\n" name (tl_ast_to_str mt) (tl_ast_to_str m)      
-    )   
+    )
+    |Tl_functor(_, header, next)->(
+        Format.sprintf "module %s struct\n%send\n" header (tl_ast_to_str next)
+    )
     |Tl_class cl ->(
        let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 

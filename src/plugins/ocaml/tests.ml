@@ -14,7 +14,7 @@ let test_suites ()=
     'a forest='a tree list" in
     let ml_hello_c =  "class hello = object(self) \
         val hello:string=\"hello\" \
-        val alpha = 12 \ 
+        val alpha = 12 \
         val arf = ref true \
         method set (key:string) = 12 \
         initializer(arf:=false) \
