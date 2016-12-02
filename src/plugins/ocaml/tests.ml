@@ -57,6 +57,15 @@ let test_suites ()=
         let comp = T.compare \
     end" in
 
+(*type c_ast = Nil| Node of string * string * string * c_ast list*)
+    let ml_ptr_ast_c = "class ptr_ast x: object \
+        val p_ast : c_ast ref \
+        method ast : c_ast \
+    end = object \
+        val p_ast = ref Nil \
+        method ast = Nil \
+    end" in   
+
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -94,9 +103,27 @@ let test_suites ()=
                     Cl_attribut(Tl_var("arf", "arf = ref true"));
                     Cl_method(Tl_fun("set", "set (key:string) = 12"), Tl_public);
                     Cl_init("(arf:=false)")
-                ]
+                ];
+                c_elmts=[];
             })
-        ], ml_hello_c))
+        ], ml_hello_c));
+        ("constraint", ml_ptr_ast_c, 
+        Tl_class_and([
+            Tl_class({
+                name="ptr_ast";
+                header="class ptr_ast x:";
+                virt=false;
+                self=None;
+                elmts=[
+                    Cl_attribut(Tl_var("p_ast", "p_ast = ref Nil"));
+                    Cl_method(Tl_fun("ast", "ast = Nil"), Tl_public);
+                ];
+                c_elmts=[
+                    Cl_attribut(Tl_constraint("p_ast", "c_ast ref"));
+                    Cl_method(Tl_constraint("ast", "c_ast"), Tl_public);
+                ];
+            })
+        ], ml_ptr_ast_c))
     ]);
     ("suite_module", [
         ("default", ml_even_m, Tl_module( "Even", [
@@ -108,7 +135,7 @@ let test_suites ()=
             Tl_type(["t"], "type t = Zero | Succ of int");
             Tl_var("alpha", "val alpha : t")  
         ])); 
-        ("constraint", ml_even_c, Tl_constraint("Even", Tl_module("Even", [
+        ("constraint", ml_even_c, Tl_module_constraint("Even", Tl_module("Even", [
                 Tl_type(["t"], "type t = Zero | Succ of int");
                 Tl_var("alpha", "let alpha = Zero");
                 Tl_fun("hello", "let hello () = print_endline \"Even\"")
@@ -117,12 +144,12 @@ let test_suites ()=
                 Tl_var("alpha", "val alpha : t")  
         ])));
         ("rec", ml_even_odd_mr, Tl_recmodule([
-            Tl_constraint("Even", Tl_module("Even",[
+            Tl_module_constraint("Even", Tl_module("Even",[
                 Tl_type(["t"], "type t = Zero | Succ of Odd.t") 
             ]), Tl_sign("Even",[
                 Tl_type(["t"], "type t = Zero | Succ of Odd.t") 
             ]));
-            Tl_constraint("Odd", Tl_module("Odd",[
+            Tl_module_constraint("Odd", Tl_module("Odd",[
                 Tl_type(["t"], "type t = Succ of Even.t") 
             ]), Tl_sign("Odd",[
                 Tl_type(["t"], "type t = Succ of Even.t") 
