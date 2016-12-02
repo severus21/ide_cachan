@@ -4,10 +4,9 @@ open Asttypes
 exception Not_define of string
 let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" )) 
 (** TODO
-  * const ref de ml
-  * rec-module, and-module, foncteur
-  * same for signature
+  *
   * extand class
+  * inherit, class signature
   * basic-left pattern
   *
   * rewrite and factorize
@@ -20,21 +19,21 @@ type tl_struct =
 |Tl_none (*to be removed*)
 |Tl_open of string list * string  
 |Tl_var of string * string
+|Tl_constraint of string * string
 |Tl_fun of string * string
 |Tl_exception of string * string
 |Tl_type of string list * string
-|Tl_module of string * tl_ast (*TODO : foncteur*)
-|Tl_sign of string * tl_ast(*en fait une liste de type*)
-|Tl_constraint of string * tl_struct* tl_struct
+|Tl_module of string * tl_ast
+|Tl_sign of string * tl_ast
+|Tl_module_constraint of string * tl_struct* tl_struct
 |Tl_functor of string * string * tl_ast                                      
 |Tl_recmodule of tl_ast * string                                        
-|Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
-(* Not truly supported yep*)
+|Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list; c_elmts: class_elmt list}(*name, header, vitual?, methods : (function, visibility), attribut*)
 |Tl_class_and of tl_struct list * string
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                  
-|Cl_init of string                  
+|Cl_init of string
 and tl_ast = tl_struct list
 
 
@@ -82,16 +81,68 @@ let pexp_to_tl name body=function{pexp_desc=desc;_}->
    
 (**
   * @param class_expr of a class
-  * @return caml class_struct, header
+  * @return caml class_struct, caml constaint struct, header
   *)
+(*
+ *type position = {
+
+        pos_fname : string;
+    pos_lnum : int;
+    pos_bol : int;
+    pos_cnum : int;
+}
+ *)
+let compare_lexing_pos (pos1:Lexing.position) pos2=    
+    assert (pos1.Lexing.pos_fname == pos2.Lexing.pos_fname);
+    pos1.Lexing.pos_cnum < pos2.Lexing.pos_cnum 
+
+let rec ptyp_to_tl name {ptyp_desc=desc;_}=
+match desc with
+|Ptyp_any -> Tl_none    
+|Ptyp_var str->Tl_constraint(name, str)
+|Ptyp_constr(lg_ident , next)->( 
+   let constraints = List.map (function x->ptyp_to_tl "" x) next in
+   let tmp = List.fold_left (fun str x->str^x) "" (Longident.flatten lg_ident.txt) in 
+   let value = List.fold_left (fun (value:string) (tl:tl_struct)->(match tl with 
+                     |Tl_constraint(_, v)->value^" "^v
+                     |Tl_none -> value
+                     |_->not_define "Bad ast")) "" constraints in                                  
+   Tl_constraint( name, String.trim( value^" "^tmp)) 
+(*TODO  en principe il faut regrouper toutes les valeur de next en une seule*)
+)                                   
+|_-> not_define "Ptyp_* not supported"
+
+let pctf_to_tl {pctf_desc=desc;_}=
+match desc with  
+|Pctf_val(name, _, _, c_type)->Cl_attribut(ptyp_to_tl name c_type)
+|Pctf_method(name, private_f, _, c_type)->(
+    Cl_method(ptyp_to_tl name c_type, 
+              match private_f with|Private->Tl_private|Public->Tl_public)
+)   
+|_-> not_define "Pctf_* not supported"
+
+let pcty_to_tl {pcty_desc=desc;_}=
+match desc with
+|Pcty_signature cl_s->List.map pctf_to_tl cl_s.pcsig_fields
+|_->not_define "Pcty_* not supported"   
+
+
+(* TODO interet de _:Lexing.position*)      
 let rec get_class_struct (_:Lexing.position) = function 
     |Pcl_fun(_,_,pattern, child_ast)->( 
-       let loc_end =  pattern.ppat_loc.Location.loc_end in
-       get_class_struct loc_end child_ast.pcl_desc(*on est entrain de parser les arguments de la classe, child => child ast*)
+        let loc_end =  pattern.ppat_loc.Location.loc_end in
+        get_class_struct loc_end child_ast.pcl_desc(*on est entrain de parser les arguments de la classe, child => child ast*)
     )
     |Pcl_structure(ast)->(
-       ast.pcstr_self.ppat_loc.Location.loc_start, ast 
-    )                                                 
+        ast.pcstr_self.ppat_loc.Location.loc_start, ast, [] 
+    )
+    |Pcl_constraint(cl,cl_t)->(
+        let pos1, cl_struct, _ = get_class_struct cl.pcl_loc.Location.loc_start cl.pcl_desc in
+        let pos2 = cl_t.pcty_loc.Location.loc_start in
+        let header_end = if compare_lexing_pos pos1 pos2 then pos1 else pos2 in 
+        header_end, cl_struct, pcty_to_tl cl_t   
+
+    )   
     |_-> not_define "Pcl_* not supported"                                 
 
 (**
@@ -139,7 +190,7 @@ let class_to_tl_class ml = function({pci_virt=virt; pci_params=_;
                                     pci_attributes=_}:class_declaration)->
     
     let loc_start = expr.pcl_loc.Location.loc_start in
-    let header_end, struct_ast = get_class_struct loc_start expr.pcl_desc in    
+    let header_end, struct_ast, constraints = get_class_struct loc_start expr.pcl_desc in    
     let elmts = class_fields_to_attrs_methods ml struct_ast.pcstr_fields in  
     
     (*detect if there is some _ste in class ...= object(_str) ... end*)
@@ -152,13 +203,14 @@ let class_to_tl_class ml = function({pci_virt=virt; pci_params=_;
 
     Tl_class {
         name = name.txt;
-        header = get_str_from_location ml (
+        header = String.trim (get_str_from_location ml (
             {Location.loc_start=loc.Location.loc_start; loc_end=header_end; 
-            loc_ghost=false}
+            loc_ghost=false})
         );
         virt = (virt == Virtual);
         self = self;
         elmts = elmts;
+        c_elmts = constraints;
     }
 (*body : code des types, function is_rec*)      
 let type_declarations_to_tl t_dcls body=
@@ -195,7 +247,7 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     let rec pmod_to_tl ({txt=name;loc=loc} as args )  =function
         |Pmod_structure s-> Tl_module(name, ast_to_tl_ast ml s)
         |Pmod_constraint (m, mt)->(
-                Tl_constraint(name, (pmod_to_tl args m.pmod_desc), 
+                Tl_module_constraint(name, (pmod_to_tl args m.pmod_desc), 
                           (pmty_to_tl name (Some mt)))
         )
         |Pmod_functor({loc=_loc;_}, _, m_expr) as func->(
@@ -231,10 +283,6 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     |Pstr_value(_,  value::_)->((*pour l'instant on ne traite que la première*)
         match value.pvb_pat.ppat_desc  with 
         |Ppat_var {txt=name;_}-> pexp_to_tl name body value.pvb_expr
-           (* match value.pvb_expr.pexp_desc with
-            | Pexp_function _ | Pexp_fun _-> Tl_fun(name, body)   
-            | _ -> Tl_var(name, body)   
-            *)(*comment faire avec les autrs patterns???*)
         |_->Tl_none                  
     )
     |Pstr_exception {pext_name={txt=name;_};_}->
@@ -254,7 +302,7 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     |_ -> Tl_none
 
 
-(**TODO : faire une nouvelle passe de simplification vers un nouvel ast **)
+(**TODO : faire une nouvelle passe de simplification vers un nouvel ast et ajouter les types**)
 
 
 (*ml is a string containing the whole file from which ast was created *)
@@ -277,12 +325,13 @@ let rec class_elmt_to_str head= function
 and tl_struct_to_str =function 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
     |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
+    |Tl_constraint(name, expr)->Format.sprintf "(%s:%s)\n" name expr
     |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_, value)->Format.sprintf "%s\n" value
     |Tl_sign(name,ast)->Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
     |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%send\n" name (tl_ast_to_str ast) 
-    |Tl_constraint(name, Tl_module(_,m), Tl_sign(_,mt))->(
+    |Tl_module_constraint(name, Tl_module(_,m), Tl_sign(_,mt))->(
         Format.sprintf "module %s : sig\n\
           %s\
           end = struct \n\
@@ -294,8 +343,16 @@ and tl_struct_to_str =function
     )
     |Tl_class cl ->(
        let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
+       let c_elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.c_elmts in
+         
+ 
        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
-         Format.sprintf "%s%s\n%s\nend\n" cl.header self_str elmts_str  
+       
+       match cl.c_elmts with
+       |[]->Format.sprintf "%s%s\n%send\n" cl.header self_str elmts_str   
+       |_ ->(Format.sprintf "%sobject\n%send = object%s\n%send\n" cl.header  
+                c_elmts_str self_str elmts_str         
+       )        
     )
     |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s\n%s" head  (tl_struct_to_str cl)) "" cls 
     |Tl_none -> ""
