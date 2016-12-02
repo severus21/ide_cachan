@@ -13,7 +13,11 @@ type tl_struct =
 |Tl_var of string * string  (** handle variable declaration, 
                               if the left-pattern is only one identifier
                               - name, code
-                              - ex: let a = 0 -> (a,let a =1) *)                   
+                              - ex: let a = 0 -> (a,let a =1) *)     
+|Tl_constraint of string * string (** handle inline constraint
+                                    - nam, constraint
+                                    - val t:int -> ("t", "int")
+                                *)                      
 |Tl_fun of string * string (**handle function declaration
                              - name, code
                              - ex: let f x=x -> (f, let f x=x)*)
@@ -30,7 +34,7 @@ type tl_struct =
 
 |Tl_sign of string * tl_ast (** handle module signature(not rec)
                               - name, declarations of types*)
-|Tl_constraint of string * tl_struct * tl_struct (** handle module with signature
+|Tl_module_constraint of string * tl_struct * tl_struct (** handle module with signature
                                              -name, module, signature*)
 |Tl_functor of string * string* tl_ast (** handle functor(warning thay are currified)
                                             -name, header, body
@@ -38,13 +42,14 @@ type tl_struct =
  *)
 |Tl_recmodule of tl_ast * string (** handle rec-module
                                    -module list, code*)
-|Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list} (** handle class  declaration
+|Tl_class of {name:string; header:string; virt:bool;self:string option; elmts:class_elmt list; c_elmts:class_elmt list} (** handle class  declaration
              - with params, with self but without and-class, withour inheritance, without type coercion
              - name: name of the class 
              - header: name and params (ex: class a f1 f2=object ... end -> clas a f1 f2=object)
              - virt: flag indicate the class is virtual or not
              - self: (ex: object ... end -> None | object(c) ... end ->Some(c) )
              - elmts: class components
+             - c_elmts: constraint on class componnts                                                                                                                                  
  *)
 |Tl_class_and of tl_struct list*string
 (** class components *)
@@ -52,7 +57,7 @@ and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                            
 |Cl_init of string (** describe intializer
-                     - code *) 
+                     - code *)
 
 (** Top-level ast type*)
 and tl_ast = tl_struct list
