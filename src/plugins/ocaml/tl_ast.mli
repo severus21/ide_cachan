@@ -85,4 +85,5 @@ val quick_tl_ast: string -> tl_ast
 val quick_tl_struct: string -> tl_struct 
 
                                
+val tl_ast_to_core : string->tl_ast->Core.Miscs.c_ast
 
