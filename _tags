@@ -4,4 +4,4 @@
 <src/plugins/*.cmx>: for-pack(Plugins)
 <src/plugins/ocaml/*.cmx>: for-pack(Plugins.Ocaml)
 "src/core":include
-<src/core/*.cmx>: for-pack(Plugins)
+<src/core/*.cmx>: for-pack(Core)

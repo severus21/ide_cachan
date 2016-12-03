@@ -316,17 +316,16 @@ let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
 
 (* ***BEGIN Printing of a tl_ast*)
 let rec class_elmt_to_str head= function
-    |Cl_attribut attr ->  Format.sprintf "%sval %s|" head (tl_struct_to_str attr)  
-    |Cl_method (m, f_v)->( Format.sprintf "%s%s method %s" head 
-        (match f_v with |Tl_private->"private "|_->"") 
-        (tl_struct_to_str m)
+    |Cl_attribut attr ->  Format.sprintf "%sCl_attribut(%s)" head (tl_struct_to_str attr)  
+    |Cl_method (m, f_v)->( Format.sprintf "%sCl_method(%s, %s)" head 
+        (tl_struct_to_str m) (match f_v with |Tl_private->"private "|_->"") 
     )
     |Cl_init body-> Format.sprintf "%sinitializer |%s|" head body              
 and tl_struct_to_str =function 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
-    |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
-    |Tl_constraint(name, expr)->Format.sprintf "(%s:%s)\n" name expr
-    |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
+    |Tl_var(name, expr)->Format.sprintf "Tl_var(%s, %s)\n" name expr 
+    |Tl_constraint(name, expr)->Format.sprintf "Tl_constraint(%s, %s)\n" name expr
+    |Tl_fun(name, expr)->Format.sprintf "Tl_fun(%s, %s)\n" name expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_, value)->Format.sprintf "%s\n" value
     |Tl_sign(name,ast)->Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
@@ -375,3 +374,99 @@ let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
 let quick_tl_struct s = List.hd (quick_tl_ast s)
 
 (* ***END Some functions to test more easily *)
+
+
+                          
+open Core.Miscs
+(* export to c_ast list*)   
+(*il faut tagger l'ast sinon on ne sais plus qui est quoi *)
+(* db: :(string, ref string) Hashtbl.t), np namespace*)
+let ptr = let db = Hashtbl.create 1024 in fun (np:string) (x:string)->
+    if (Hashtbl.mem db np) = false then Hashtbl.add db np (Hashtbl.create 1024);
+    let tmp = Hashtbl.find db np in 
+    
+    if (Hashtbl.mem tmp x) = false then Hashtbl.add tmp x (ref x); 
+    Hashtbl.find tmp x 
+
+
+
+let rec cl_elmt_to_core (np:string) :class_elmt-> c_ast=function
+|Cl_attribut tl_s->tl_struct_to_core np tl_s
+|Cl_method(tl_s, _)-> tl_struct_to_core np tl_s(*TODO visibility*)
+|Cl_init(body)->[Node({
+    name="initializer";
+    header="";
+    body=ptr np body;
+    children=[]})]
+and tl_struct_to_core np=function
+|Tl_none -> []    
+|Tl_open(modules, body) -> [Node({
+    name = List.fold_left (fun x y->x^y) "" modules;
+    header="";
+    body=ptr np body;
+    children=[]})]
+|Tl_var(name, body) -> [Node({
+    name =name;
+    header="";
+    body=ptr np body;
+    children=[]})]
+|Tl_constraint(name, body) -> [Node({
+    name = name;
+    header="";
+    body=ptr np body;
+    children=[]})]
+|Tl_fun(name, body) -> [Node({
+    name =name;
+    header="";
+    body=ptr np body;
+    children=[]})]
+|Tl_exception(name, body) -> [Node({
+    name = name;
+    header="";
+    body=ptr np body;
+    children=[]})]
+|Tl_type(names, body) ->List.map (function name-> Node({
+    name =name;
+    header="";
+    body=ptr np body;
+    children=[]})) names
+|Tl_module(name, ast) -> [Node({
+    name = name;
+    header = "";
+    body = ref "";(*something bad, body option??, header option??*)
+    children = tl_ast_to_core (np^"."^name) ast})]    
+|Tl_sign(name, ast) -> [Node({
+    name = name;
+    header = "";
+    body = ref "";(*something bad, body option??, header option??*)
+    children = tl_ast_to_core (np^"."^name) ast})]    
+|Tl_module_constraint(name, m, m_t) -> [Node({
+    name = name;
+    header = "";
+    body = ref "";
+    children = (tl_struct_to_core np m_t) @ (tl_struct_to_core np m)})]    
+|Tl_functor(name, header, ast) -> [Node({
+    name = name;
+    header = header;
+    body = ref "";
+    children = tl_ast_to_core (np^"."^name) ast})]    
+|Tl_recmodule(modules, body) -> [Node({
+    name = "";
+    header = "";
+    body = ptr np body;
+    children = tl_ast_to_core np modules})]    
+|Tl_class cl->( 
+   let fct = List.map (function x-> cl_elmt_to_core (np^"#"^cl.name) x) in  
+   [Node({(*reste à traiter virt and self dans gset ??*)
+    name = cl.name;
+    header = cl.header;
+    body = ref "";
+    children = List.concat ((fct cl.c_elmts) @ (fct cl.elmts))})]
+)                  
+|Tl_class_and(cls, body) -> [Node({
+    name = "";
+    header = "";
+    body = ptr np body;
+    children = tl_ast_to_core np cls})]    
+                                 
+and tl_ast_to_core np = function x -> List.concat (List.map (tl_struct_to_core np)x)
