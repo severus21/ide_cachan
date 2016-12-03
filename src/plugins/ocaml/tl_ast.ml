@@ -378,6 +378,7 @@ let quick_tl_struct s = List.hd (quick_tl_ast s)
 
                           
 open Core.Miscs
+open Core.Gset                          
 (* export to c_ast list*)   
 (*il faut tagger l'ast sinon on ne sais plus qui est quoi *)
 (* db: :(string, ref string) Hashtbl.t), np namespace*)
@@ -390,83 +391,148 @@ let ptr = let db = Hashtbl.create 1024 in fun (np:string) (x:string)->
 
 
 
-let rec cl_elmt_to_core (np:string) :class_elmt-> c_ast=function
+let rec cl_elmt_to_core (np:string)=function
 |Cl_attribut tl_s->tl_struct_to_core np tl_s
 |Cl_method(tl_s, _)-> tl_struct_to_core np tl_s(*TODO visibility*)
-|Cl_init(body)->[Node({
-    name="initializer";
+|Cl_init(body)->(
+    let (meta:gset metaData) = new metaData in meta#add_tag "plg_ast" ([TStr "Cl_init"]:gset tag);
+    [Node({
+    name="";
     header="";
     body=ptr np body;
-    children=[]})]
-and tl_struct_to_core np=function
-|Tl_none -> []    
-|Tl_open(modules, body) -> [Node({
-    name = List.fold_left (fun x y->x^y) "" modules;
-    header="";
-    body=ptr np body;
-    children=[]})]
-|Tl_var(name, body) -> [Node({
-    name =name;
-    header="";
-    body=ptr np body;
-    children=[]})]
-|Tl_constraint(name, body) -> [Node({
-    name = name;
-    header="";
-    body=ptr np body;
-    children=[]})]
-|Tl_fun(name, body) -> [Node({
-    name =name;
-    header="";
-    body=ptr np body;
-    children=[]})]
-|Tl_exception(name, body) -> [Node({
-    name = name;
-    header="";
-    body=ptr np body;
-    children=[]})]
-|Tl_type(names, body) ->List.map (function name-> Node({
-    name =name;
-    header="";
-    body=ptr np body;
-    children=[]})) names
-|Tl_module(name, ast) -> [Node({
-    name = name;
-    header = "";
-    body = ref "";(*something bad, body option??, header option??*)
-    children = tl_ast_to_core (np^"."^name) ast})]    
-|Tl_sign(name, ast) -> [Node({
-    name = name;
-    header = "";
-    body = ref "";(*something bad, body option??, header option??*)
-    children = tl_ast_to_core (np^"."^name) ast})]    
-|Tl_module_constraint(name, m, m_t) -> [Node({
-    name = name;
-    header = "";
-    body = ref "";
-    children = (tl_struct_to_core np m_t) @ (tl_struct_to_core np m)})]    
-|Tl_functor(name, header, ast) -> [Node({
-    name = name;
-    header = header;
-    body = ref "";
-    children = tl_ast_to_core (np^"."^name) ast})]    
-|Tl_recmodule(modules, body) -> [Node({
-    name = "";
-    header = "";
-    body = ptr np body;
-    children = tl_ast_to_core np modules})]    
-|Tl_class cl->( 
-   let fct = List.map (function x-> cl_elmt_to_core (np^"#"^cl.name) x) in  
-   [Node({(*reste à traiter virt and self dans gset ??*)
-    name = cl.name;
-    header = cl.header;
-    body = ref "";
-    children = List.concat ((fct cl.c_elmts) @ (fct cl.elmts))})]
-)                  
-|Tl_class_and(cls, body) -> [Node({
-    name = "";
-    header = "";
-    body = ptr np body;
-    children = tl_ast_to_core np cls})]    
-                                 
+    children=[];
+    meta=meta})]
+)      
+and tl_struct_to_core np tl_struct=
+    let meta = new metaData in
+    match tl_struct with
+    |Tl_none -> []    
+    |Tl_open(modules, body) ->( 
+        meta#add_tag "plg_ast" [TStr "Tl_open"];
+        [Node({
+            name = List.fold_left (fun x y->x^y) "" modules;
+            header="";
+            body=ptr np body;
+            children=[];
+            meta=meta})]
+    )                               
+    |Tl_var(name, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_var"];
+        [Node({
+            name =name;
+            header="";
+            body=ptr np body;
+            children=[];
+            meta=meta})]
+    )                          
+    |Tl_constraint(name, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_constraint"];    
+        [Node({
+            name = name;
+            header="";
+            body=ptr np body;
+            children=[];
+            meta=meta})]
+    )      
+    |Tl_fun(name, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_fun"];
+        [Node({
+            name =name;
+            header="";
+            body=ptr np body;
+            children=[];
+            meta=meta})]
+    )      
+    |Tl_exception(name, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_exception"];
+        [Node({
+            name = name;
+            header="";
+            body=ptr np body;
+            children=[];
+            meta=meta})]
+    )      
+    |Tl_type(names, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_type"];   
+        List.map (function name-> Node({
+            name =name;
+            header="";
+            body=ptr np body;
+            children=[];
+            meta=meta})) names
+    )       
+    |Tl_module(name, ast) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_module"];
+        [Node({
+            name = name;
+            header = "";
+            body = ref "";(*something bad, body option??, header option??*)
+            children = tl_ast_to_core (np^"."^name) ast;meta=meta})]    
+    )      
+    |Tl_sign(name, ast) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_sign"];
+        [Node({
+        name = name;
+        header = "";
+        body = ref "";(*something bad, body option??, header option??*)
+        children = tl_ast_to_core (np^"."^name) ast;
+        meta=meta})]  
+    )      
+    |Tl_module_constraint(name, m, m_t) ->(
+        let fct value = List.iter( function
+                                     |Nil->()
+                                     |Node {meta=meta;_}->meta#add_tag "plg_desc" [TStr value]) in
+        meta#add_tag "plg_ast" [TStr "Tl_module_constraint"];
+        let m_t_children = (tl_struct_to_core np m_t) 
+        and m_children = (tl_struct_to_core np m)in
+        fct "module_type_item" m_t_children; 
+        fct "module_item" m_children;
+          
+        [Node({
+        name = name;
+        header = "";
+        body = ref "";
+        children = m_t_children @ m_children; 
+        meta=meta})]
+    )      
+    |Tl_functor(name, header, ast) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_functor"];
+        [Node({
+            name = name;
+            header = header;
+            body = ref "";
+            children = tl_ast_to_core (np^"."^name) ast;
+            meta=meta})]
+    )      
+    |Tl_recmodule(modules, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_recmodule"];
+        [Node({
+        name = "";
+        header = "";
+        body = ptr np body;
+        children = tl_ast_to_core np modules;
+        meta=meta})]
+    )      
+    |Tl_class cl->( 
+       let fct = List.map (function x-> cl_elmt_to_core (np^"#"^cl.name) x) in  
+       meta#add_tag "plg_ast" [TStr "Tl_class"];
+       meta#add_tag "plg_vir" [TStr (if cl.virt then "true" else "false")];
+       meta#add_tag "plg_self" [TStr ((match cl.self with |None->""|Some(s)->s))];
+       [Node({(*reste à traiter virt and self dans gset ??*)
+        name = cl.name;
+        header = cl.header;
+        body = ref "";
+        children = List.concat ((fct cl.c_elmts) @ (fct cl.elmts));
+        meta=meta})]
+    )                  
+    |Tl_class_and(cls, body) ->(
+        meta#add_tag "plg_ast" [TStr "Tl_class_and"];
+        [Node({
+        name = "";
+        header = "";
+        body = ptr np body;
+        children = tl_ast_to_core np cls;
+        meta=meta})]
+    ) 
+                                     
 and tl_ast_to_core np = function x -> List.concat (List.map (tl_struct_to_core np)x)
