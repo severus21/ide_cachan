@@ -391,18 +391,46 @@ let ptr = let db = Hashtbl.create 1024 in fun (np:string) (x:string)->
 
 
 
-let rec cl_elmt_to_core (np:string)=function
-|Cl_attribut tl_s->tl_struct_to_core np tl_s
-|Cl_method(tl_s, _)-> tl_struct_to_core np tl_s(*TODO visibility*)
-|Cl_init(body)->(
-    let (meta:gset metaData) = new metaData in meta#add_tag "plg_ast" ([TStr "Cl_init"]:gset tag);
-    [Node({
-    name="";
-    header="";
-    body=ptr np body;
-    children=[];
-    meta=meta})]
-)      
+let rec cl_elmt_to_core (np:string) cl_elmt=
+    let meta = new metaData in 
+    match cl_elmt with  
+    |Cl_attribut tl_s->(
+        meta#add_tag "plg_ast" [TStr "Cl_attribut"];
+        match tl_s with
+        |Tl_var(name, body)->(
+            [Node {
+                name=name;
+                header="";
+                body= ptr np body;
+                children=[];
+                meta=meta;
+            }]
+        )
+        |_-> not_define "bad ast" (*TODO Bad ast exception*)       
+    )           
+    |Cl_method(tl_s, tl_v)->(
+        meta#add_tag "plg_ast" [ TStr "Cl_method"];
+        match tl_s with (*TODO visibility*)
+        |Tl_fun(name, body)->(
+            [Node {
+                name=name;
+                header=(match tl_v with|Tl_private->"private"|Tl_public->"public");
+                body= ptr np body;
+                children=[];
+                meta=meta;
+            }]
+        )
+        |_->not_define "bad ast"                       
+    )     
+    |Cl_init(body)->(
+        meta#add_tag "plg_ast" ([TStr "Cl_init"]:gset tag);
+        [Node({
+        name="";
+        header="";
+        body=ptr np body;
+        children=[];
+        meta=meta})]
+    )      
 and tl_struct_to_core np tl_struct=
     let meta = new metaData in
     match tl_struct with
@@ -410,7 +438,7 @@ and tl_struct_to_core np tl_struct=
     |Tl_open(modules, body) ->( 
         meta#add_tag "plg_ast" [TStr "Tl_open"];
         [Node({
-            name = List.fold_left (fun x y->x^y) "" modules;
+            name = List.fold_left (fun x y->x^"."^y) "" modules;
             header="";
             body=ptr np body;
             children=[];
@@ -452,14 +480,20 @@ and tl_struct_to_core np tl_struct=
             children=[];
             meta=meta})]
     )      
-    |Tl_type(names, body) ->(
-        meta#add_tag "plg_ast" [TStr "Tl_type"];   
-        List.map (function name-> Node({
-            name =name;
+    |Tl_type(names, body) ->((*il nous faut un node parent à la liste*)
+        meta#add_tag "plg_ast" [TStr "Tl_type"];
+        let meta_leaf = new metaData in meta_leaf#add_tag "plg_ast" [TStr "Tl_type_leaf"];
+        [Node({
+            name="";
             header="";
             body=ptr np body;
-            children=[];
-            meta=meta})) names
+            children=List.map (function name-> Node({
+                name =name;
+                header="";
+                body=ptr np body;
+                children=[];
+                meta=meta_leaf})) names;
+            meta=meta})]  
     )       
     |Tl_module(name, ast) ->(
         meta#add_tag "plg_ast" [TStr "Tl_module"];
@@ -514,15 +548,26 @@ and tl_struct_to_core np tl_struct=
         meta=meta})]
     )      
     |Tl_class cl->( 
-       let fct = List.map (function x-> cl_elmt_to_core (np^"#"^cl.name) x) in  
-       meta#add_tag "plg_ast" [TStr "Tl_class"];
-       meta#add_tag "plg_vir" [TStr (if cl.virt then "true" else "false")];
-       meta#add_tag "plg_self" [TStr ((match cl.self with |None->""|Some(s)->s))];
-       [Node({(*reste à traiter virt and self dans gset ??*)
+        let fct value = List.iter( function
+            |Nil->()
+            |Node {meta=meta;_}->meta#add_tag "plg_desc" [TStr value]) in
+
+        let fct1 items = List.concat( List.map (function x-> 
+                                  cl_elmt_to_core (np^"#"^cl.name) x) items) in  
+          
+        meta#add_tag "plg_ast" [TStr "Tl_class"];
+        meta#add_tag "plg_virt" [TStr (if cl.virt then "true" else "false")];
+        meta#add_tag "plg_self" [TStr ((match cl.self with |None->""|Some(s)->s))];
+
+        let c_t, c = fct1 cl.c_elmts, fct1 cl.elmts in
+        fct "class_type_item" c_t;
+        fct "class_item" c;
+
+        [Node({(*reste à traiter virt and self dans gset ??*)
         name = cl.name;
         header = cl.header;
         body = ref "";
-        children = List.concat ((fct cl.c_elmts) @ (fct cl.elmts));
+        children = (c_t @ c);
         meta=meta})]
     )                  
     |Tl_class_and(cls, body) ->(
@@ -536,3 +581,95 @@ and tl_struct_to_core np tl_struct=
     ) 
                                      
 and tl_ast_to_core np = function x -> List.concat (List.map (tl_struct_to_core np)x)
+
+
+let c_type_to_tl_type =function
+|Nil->not_define "Bad core node for type_leaf"
+|Node node->(    
+    match node.meta#get_value "plg_desc" with
+    |Some([TStr("Tl_type_leaf")])->node.name
+    |_->not_define "Bad core node for type_leaf"
+ )
+
+let rec split_c_constraint prefix=function
+|[]-> [], []   
+|Nil::_-> not_define "not def"
+|(Node child)::children->(
+    let (t_items:c_node list), items = split_c_constraint prefix children in   
+    let t_label, label = prefix^"_type_item", prefix^"_item" in 
+      
+    match child.meta#get_value "plg_desc" with
+    |Some([TStr l]) when l=t_label-> (Node child)::t_items, items
+    |Some([TStr l]) when l=label-> t_items, (Node child)::items
+    |_->not_define "not def"
+)
+
+let rec c_ast_to_cl_elmt=function
+|Nil ->not_define "bas ast c_ast_to_cl_elmt" 
+|Node node->(  
+    match node.meta#get_value "plg_ast" with
+    |None->not_define "bad c_node"
+    |Some [TStr "Cl_attribut"]->Cl_attribut(Tl_var(node.name, !(node.body)))
+    |Some [TStr "Cl_method"]->Cl_method(Tl_fun(node.name, !(node.body)), 
+        match node.header with 
+            |"public"->Tl_public
+            |"private"->Tl_private
+            |_->not_define "kfa")      
+    |Some [TStr "Cl_init"]->Cl_init(!(node.body))
+    |_->not_define "dksfs"                             
+)
+and c_node_to_tl_ast=function
+|Nil -> Tl_none
+|Node node->(          
+    match node.meta#get_value "plg_ast" with
+    |None -> not_define "bad core tree"
+    |Some([TStr("Tl_open")])-> Tl_open(String.split_on_char '.' node.name, !(node.body))
+    |Some([TStr("Tl_var")])-> Tl_var(node.name, !(node.body))
+    |Some([TStr("Tl_constraint")])->Tl_constraint(node.name, !(node.body))
+    |Some([TStr("Tl_fun")])->Tl_fun(node.name, !(node.body))
+    |Some([TStr("Tl_exception")])->Tl_exception(node.name, !(node.body))      
+    |Some([TStr("Tl_type")])->(
+        Tl_type( List.map c_type_to_tl_type node.children, !(node.body))
+    )   
+    |Some([TStr("Tl_module")])->Tl_module(node.name, c_ast_to_tl_ast node.children)
+    |Some([TStr("Tl_sign")])->Tl_sign(node.name, c_ast_to_tl_ast node.children)           
+    |Some([TStr("Tl_module_constraint")])->(
+        let m_t, m = match split_c_constraint "module" node.children with 
+            |m_t::[], m::[]->m_t, m
+            |_->not_define "kfsdh"
+        in
+        Tl_module_constraint(node.name, c_node_to_tl_ast m_t, c_node_to_tl_ast m)  
+    )
+    |Some([TStr("Tl_functor")])->Tl_functor(node.name, node.header, 
+        c_ast_to_tl_ast node.children)
+    |Some([TStr("Tl_recmodule")])->Tl_recmodule(c_ast_to_tl_ast node.children, 
+        !(node.body))
+    |Some([TStr("Tl_class")])->( 
+        let f_virt = match (node.meta)#get_value "plg_virt" with
+        |Some([TStr("true")])->true
+        |Some([TStr("false")])->false
+        |_->not_define "not def" in
+        
+        let self = match (node.meta)#get_value "plg_self" with
+        |Some([TStr ""])->None
+        |Some([TStr s])->Some s             
+        |_->not_define "cnc" in
+
+        let c_t, c = split_c_constraint "class" node.children in
+
+        Tl_class({
+            name=node.name;
+            header=node.header;
+            virt=f_virt;
+            self=self;
+            elmts=List.map c_ast_to_cl_elmt c_t;
+            c_elmts=List.map c_ast_to_cl_elmt c;  
+        })
+    )
+    |Some([TStr("Tl_class_and")])->Tl_class_and(c_ast_to_tl_ast node.children ,
+                                        !(node.body))
+    |_->not_define "not yet"                                      
+)
+and c_ast_to_tl_ast x= List.map c_node_to_tl_ast x
+
+                                        
