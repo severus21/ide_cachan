@@ -8,6 +8,9 @@ type c_node =
 |Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset metaData}
 and c_ast = c_node list
 
+exception Bad_cnode of string
+val bad_cnode:string->'a                         
+
 (** To reference a piece of c_ast, we can copy without duplicated part of ast 
 *)
 class ptr_ast : c_ast -> object

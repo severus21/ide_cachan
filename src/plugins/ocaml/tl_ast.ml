@@ -3,6 +3,8 @@ open Asttypes
 
 exception Not_define of string
 let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" )) 
+exception Bad_ast of string
+let bad_ast msg = raise (Bad_ast( "src/tl_ast.ml : "^msg^"\n" )) 
 (** TODO
   *
   * extand class
@@ -398,6 +400,7 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
         meta#add_tag "plg_ast" [TStr "Cl_attribut"];
         match tl_s with
         |Tl_var(name, body)->(
+            meta#add_tag "plg_desc" [ TStr "Tl_var"];
             [Node {
                 name=name;
                 header="";
@@ -406,21 +409,43 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
                 meta=meta;
             }]
         )
-        |_-> not_define "bad ast" (*TODO Bad ast exception*)       
+        |Tl_constraint(name, body)->(
+            meta#add_tag "plg_desc" [ TStr "Tl_constraint"];
+            [Node{
+                name = name;
+                header = "";
+                body = ptr np body;
+                children = [];
+                meta = meta;
+            }]
+        )
+        |_-> bad_ast "cl_elmt_to_core : Cl_attribut" (*TODO Bad ast exception*)       
     )           
     |Cl_method(tl_s, tl_v)->(
+        let header = match tl_v with|Tl_private->"private"|Tl_public->"public" in
         meta#add_tag "plg_ast" [ TStr "Cl_method"];
         match tl_s with (*TODO visibility*)
         |Tl_fun(name, body)->(
+            meta#add_tag "plg_desc" [ TStr "Tl_fun"];
             [Node {
                 name=name;
-                header=(match tl_v with|Tl_private->"private"|Tl_public->"public");
+                header=header;
                 body= ptr np body;
                 children=[];
                 meta=meta;
             }]
         )
-        |_->not_define "bad ast"                       
+        |Tl_constraint(name, body)->(
+            meta#add_tag "plg_desc" [ TStr "Tl_constraint"];
+            [Node{
+                name = name;
+                header = header;
+                body = ptr np body;
+                children = [];
+                meta = meta;
+            }]
+        )
+        |_->bad_ast "cl_elmt_to_core : Cl_method"                       
     )     
     |Cl_init(body)->(
         meta#add_tag "plg_ast" ([TStr "Cl_init"]:gset tag);
@@ -586,9 +611,9 @@ and tl_ast_to_core np = function x -> List.concat (List.map (tl_struct_to_core n
 let c_type_to_tl_type =function
 |Nil->not_define "Bad core node for type_leaf"
 |Node node->(    
-    match node.meta#get_value "plg_desc" with
+    match node.meta#get_value "plg_ast" with
     |Some([TStr("Tl_type_leaf")])->node.name
-    |_->not_define "Bad core node for type_leaf"
+    |_->not_define "Bad core node for type_leafoo"
  )
 
 let rec split_c_constraint prefix=function
@@ -608,15 +633,27 @@ let rec c_ast_to_cl_elmt=function
 |Nil ->not_define "bas ast c_ast_to_cl_elmt" 
 |Node node->(  
     match node.meta#get_value "plg_ast" with
-    |None->not_define "bad c_node"
-    |Some [TStr "Cl_attribut"]->Cl_attribut(Tl_var(node.name, !(node.body)))
-    |Some [TStr "Cl_method"]->Cl_method(Tl_fun(node.name, !(node.body)), 
-        match node.header with 
+    |Some [TStr "Cl_attribut"]->(
+        match node.meta#get_value "plg_desc" with
+        |Some [TStr "class_item"]->Cl_attribut(Tl_var(node.name, !(node.body)))
+        |Some [TStr "class_type_item"]->Cl_attribut(Tl_constraint(node.name, !(node.body))) 
+        |_->bad_cnode "c_ast_to_cl_elmt Cl_attribut"    
+    )      
+    |Some [TStr "Cl_method"]->(
+        let f_visibility = match node.header with 
             |"public"->Tl_public
             |"private"->Tl_private
-            |_->not_define "kfa")      
-    |Some [TStr "Cl_init"]->Cl_init(!(node.body))
-    |_->not_define "dksfs"                             
+            |_->not_define "c_ast_to_cl_elmt Cl_method f_visibility"
+        in               
+
+        match node.meta#get_value "plg_desc" with
+        |Some [TStr "class_item"]->  Cl_method(Tl_fun(node.name, !(node.body)), f_visibility  
+            )
+        |Some [TStr "class_type_item"]->Cl_method(Tl_constraint(node.name, !(node.body)), f_visibility) 
+        |_->bad_cnode "c_ast_to_cl_elmt Cl_method"                             
+    )                                
+    |Some [TStr "class_type_item"]->Cl_init(!(node.body))
+    |_->bad_cnode "c_ast_to_cl_elmt"                             
 )
 and c_node_to_tl_ast=function
 |Nil -> Tl_none

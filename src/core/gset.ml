@@ -44,14 +44,13 @@ class ['a] tags = object(self)
     List.fold_left (fun prec -> function
     | TStr(x) -> prec ^ ", " ^ "S : " ^ x
     | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name
-    | TDepend _ -> "" (*[Alice] TODO*)
+    | TDepend _ -> "Dep : " (*[Alice] TODO*)
     ) "" values
 
 
   method to_string =
-    let s = ref "" in
-    Hashtbl.iter (fun _ values -> s := !s^(self#tag_to_list values)) tag_htbl;
-    !s
+    Hashtbl.fold (fun key values str-> Format.sprintf "%s; %s:[%s] " str key 
+                                         (self#tag_to_list values)) tag_htbl "";
 
 end
 
