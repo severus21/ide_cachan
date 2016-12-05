@@ -304,16 +304,26 @@ let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
 
 (* ***BEGIN Printing of a tl_ast*)
 let rec class_elmt_to_str head= function
-    |Cl_attribut attr ->  Format.sprintf "%sCl_attribut(%s)" head (tl_struct_to_str attr)  
-    |Cl_method (m, f_v)->( Format.sprintf "%sCl_method(%s, %s)" head 
-        (tl_struct_to_str m) (match f_v with |Tl_private->"private "|_->"") 
+    |Cl_attribut Tl_var(name, value) ->
+        Format.sprintf "%s\tval %s = %s\n" head name value 
+    |Cl_attribut Tl_constraint(name, value)->
+        Format.sprintf "%s\tval %s : %s\n" head name value
+    |Cl_method (m, f_v)->(
+        let virtual_str = match f_v with |Tl_private->"private "|_->"" in
+         match m with
+        |Tl_fun(name, expr)->    
+            Format.sprintf "%s\t%smethod %s = %s\n" head virtual_str name expr 
+        |Tl_constraint(name, expr)->
+            Format.sprintf "%s\t%smethod %s : %s\n" head virtual_str name expr
+        |_-> not_define "bad tree class_elmt_to_str Cl_method"       
     )
-    |Cl_init body-> Format.sprintf "%sinitializer |%s|" head body              
+    |Cl_init body-> Format.sprintf "%sinitializer %s" head body              
+    |_->not_define "baf_tl_ast class_elmt_to_str"                  
 and tl_struct_to_str =function 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
-    |Tl_var(name, expr)->Format.sprintf "Tl_var(%s, %s)\n" name expr 
-    |Tl_constraint(name, expr)->Format.sprintf "Tl_constraint(%s, %s)\n" name expr
-    |Tl_fun(name, expr)->Format.sprintf "Tl_fun(%s, %s)\n" name expr
+    |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
+    |Tl_constraint(_, expr)->Format.sprintf "%s\n" expr
+    |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_, value)->Format.sprintf "%s\n" value
     |Tl_sign(name,ast)->Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
