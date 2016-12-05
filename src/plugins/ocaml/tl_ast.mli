@@ -59,6 +59,7 @@ and class_elmt=
 |Cl_init of string (** describe intializer
                      - code *)
 
+|Cl_inherit of string * string option
 (** Top-level ast type*)
 and tl_ast = tl_struct list
 

@@ -36,6 +36,7 @@ and class_elmt=
 |Cl_method of tl_struct * tl_visibility
 |Cl_attribut of tl_struct                  
 |Cl_init of string
+|Cl_inherit of string * string option               
 and tl_ast = tl_struct list
 
 
@@ -170,8 +171,15 @@ let class_fields_to_attrs_methods ml fields=
             (Cl_attribut dattr)
         )
         |Pcf_initializer exp->(
-             Cl_init (get_str_from_location ml exp.pexp_loc)
-        )    
+            Cl_init (get_str_from_location ml exp.pexp_loc)
+        )
+        |Pcf_inherit(_, expr, as_str)->(
+            match expr.pcl_desc with
+            |Pcl_constr(lg_ident, _)->    
+                Cl_inherit(List.fold_left (fun str x->str^x) 
+                    "" (Longident.flatten lg_ident.txt), as_str)                   
+            |_->not_define "class_fields_to_attrs_methods Pcf_inherit"
+        )          
         |_-> not_define "Pcf_* not supported" 
     in
     List.map field_to_cl_field fields    
@@ -335,7 +343,9 @@ let rec class_elmt_to_str head= function
             Format.sprintf "%s\t%smethod %s : %s\n" head virtual_str name expr
         |_-> not_define "bad tree class_elmt_to_str Cl_method"       
     )
-    |Cl_init body-> Format.sprintf "%sinitializer %s" head body              
+    |Cl_init body-> Format.sprintf "%s\tinitializer %s" head body    
+    |Cl_inherit (name,as_str)-> Format.sprintf "%s\tinherit %s %s\n" head name 
+          (match as_str with |None->"" |Some s-> "as "^s)
     |_->not_define "baf_tl_ast class_elmt_to_str"                  
 and tl_struct_to_str =function 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
@@ -479,7 +489,17 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
         body=ptr np body;
         children=[];
         meta=meta})]
-    )      
+    )
+    |Cl_inherit(name, as_str)->(
+        meta#add_tag "plg_ast" [TStr "Cl_inherit"];
+        [Node({
+            name=name;
+            header= (match as_str with |Some s->s|None->"");
+            body=ref "";
+            children=[];
+            meta=meta;
+        })]
+    )
 and tl_struct_to_core np tl_struct=
     let meta = new tags in
     match tl_struct with
@@ -683,6 +703,9 @@ let rec c_ast_to_cl_elmt=function
         |_->bad_cnode "c_ast_to_cl_elmt Cl_method"                             
     )                                
     |Some [TStr "Cl_init"]->Cl_init(!(node.body))
+    |Some [TStr "Cl_inherit"]->Cl_inherit(node.name, match node.header with
+        |""->None
+        |s->Some s)
     |_->bad_cnode "c_ast_to_cl_elmt"                             
 )
 and c_node_to_tl_ast=function
