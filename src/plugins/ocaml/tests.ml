@@ -16,6 +16,7 @@ let test_suites ()=
         val hello:string=\"hello\" \
         val alpha = 12 \
         val arf = ref true \
+        inherit troll as super_meat_boy \
         method set (key:string) = 12 \
         initializer(arf:=false) \
     end" in
@@ -67,6 +68,7 @@ let test_suites ()=
     end" in   
     
     let ml_class_type = "class type restricted_point_type = object \
+        inherit dwarf \                             
         method get_x : int \
         method bump : unit \
     end" in      
@@ -105,6 +107,7 @@ let test_suites ()=
                     Cl_attribut(Tl_var("hello", "hello:string=\"hello\""));
                     Cl_attribut(Tl_var("alpha", "alpha = 12"));
                     Cl_attribut(Tl_var("arf", "arf = ref true"));
+                    Cl_inherit("troll", Some "super_meat_boy");
                     Cl_method(Tl_fun("set", "set (key:string) = 12"), Tl_public);
                     Cl_init("(arf:=false)")
                 ];
@@ -137,6 +140,7 @@ let test_suites ()=
                 self=None;
                 elmts=[];
                 c_elmts=[
+                    Cl_inherit("dwarf", None);
                     Cl_method(Tl_constraint("get_x", "int"), Tl_public);
                     Cl_method(Tl_constraint("bump", "unit"), Tl_public);
                 ];

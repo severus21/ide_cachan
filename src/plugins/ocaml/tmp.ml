@@ -21,7 +21,7 @@ class ordre = object
     val x = 5
 end  
 
-class ordre2 = object
+class type ordre2 = object
     inherit ordre
-    val y = 77
+    val y :int
 end
