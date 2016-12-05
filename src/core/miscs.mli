@@ -5,7 +5,7 @@ open Gset
 * *)
 type c_node = 
 |Nil
-|Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset metaData}
+|Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset tags}
 and c_ast = c_node list
 
 exception Bad_cnode of string

@@ -418,7 +418,7 @@ let ptr = let db = Hashtbl.create 1024 in fun (np:string) (x:string)->
 
 
 let rec cl_elmt_to_core (np:string) cl_elmt=
-    let meta = new metaData in 
+    let meta = new tags in 
     match cl_elmt with  
     |Cl_attribut tl_s->(
         meta#add_tag "plg_ast" [TStr "Cl_attribut"];
@@ -481,7 +481,7 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
         meta=meta})]
     )      
 and tl_struct_to_core np tl_struct=
-    let meta = new metaData in
+    let meta = new tags in
     match tl_struct with
     |Tl_none -> []    
     |Tl_open(modules, body) ->( 
@@ -531,7 +531,7 @@ and tl_struct_to_core np tl_struct=
     )      
     |Tl_type(names, body) ->(
         meta#add_tag "plg_ast" [TStr "Tl_type"];
-        let meta_leaf = new metaData in 
+        let meta_leaf = new tags in 
         meta_leaf#add_tag "plg_ast" [TStr "Tl_type_leaf"];
         [Node({
             name="";
