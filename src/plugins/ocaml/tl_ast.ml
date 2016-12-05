@@ -112,7 +112,14 @@ match desc with
 |Pctf_method(name, private_f, _, c_type)->(
     Cl_method(ptyp_to_tl name c_type, 
               match private_f with|Private->Tl_private|Public->Tl_public)
-)   
+)
+|Pctf_inherit c_t->(
+    match c_t.pcty_desc with
+    |Pcty_constr (lg_ident, _)->  
+        Cl_inherit(List.fold_left (fun str x->str^x) 
+            "" (Longident.flatten lg_ident.txt), None) 
+    |_->not_define "pctf_to_tl Pctf_inherit"      
+ )
 |_-> not_define "Pctf_* not supported"
 
 let pcty_to_tl {pcty_desc=desc;_}=
