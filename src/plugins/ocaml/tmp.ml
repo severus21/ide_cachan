@@ -1,4 +1,4 @@
-let alpha = 11
+(*let alpha = 11
 let troll x = x + alpha              
 
 class ptr_ast x: object 
@@ -15,3 +15,8 @@ module OrderList (T:Comparable) = struct
         type t = content list ref 
         let comp = T.compare 
     end
+ *)
+class type restricted_point_type = object
+  method get_x : int
+  method bump : unit
+end;;

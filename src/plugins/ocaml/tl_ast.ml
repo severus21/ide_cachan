@@ -176,9 +176,9 @@ let class_fields_to_attrs_methods ml fields=
     in
     List.map field_to_cl_field fields    
 
-let class_to_tl_class ml = function({pci_virt=virt; pci_params=_; 
+let class_to_tl_class ml = function{pci_virt=virt; pci_params=_; 
                                     pci_name=name; pci_expr=expr; pci_loc=loc;
-                                    pci_attributes=_}:class_declaration)->
+                                    pci_attributes=_}->
     
     let header_end, struct_ast, constraints = get_class_struct expr.pcl_desc in    
     let elmts = class_fields_to_attrs_methods ml struct_ast.pcstr_fields in  
@@ -200,6 +200,20 @@ let class_to_tl_class ml = function({pci_virt=virt; pci_params=_;
         virt = (virt == Virtual);
         self = self;
         elmts = elmts;
+        c_elmts = constraints;
+    }
+
+let class_type_to_tl_class = function{pci_virt=virt; pci_params=_; 
+                                    pci_name=name; pci_expr=expr;_}-> 
+    
+    let constraints = pcty_to_tl expr in  
+
+    Tl_class {
+        name = name.txt;
+        header = "";
+        virt = (virt == Virtual);
+        self = None;
+        elmts = [];
         c_elmts = constraints;
     }
 (*body : code des types, function is_rec*)      
@@ -281,6 +295,10 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
         let cls = (List.map (function d->class_to_tl_class ml d) decls) in
         Tl_class_and(cls, body)
     )
+    |Pstr_class_type decls->(
+        let cls = (List.map (function d->class_type_to_tl_class d) decls) in
+        Tl_class_and(cls, body)  
+    )  
     |Pstr_module m -> pmod_to_tl m.pmb_name m.pmb_expr.pmod_desc
     |Pstr_modtype mt -> pmty_to_tl mt.pmtd_name.txt mt.pmtd_type
     |Pstr_recmodule m_list ->(
@@ -353,9 +371,11 @@ and tl_struct_to_str =function
          
        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
 
-       match cl.c_elmts with
-       |[]->Format.sprintf "%s%s\n%send\n" cl.header self_str elmts_str   
-       |_ ->(Format.sprintf "%sobject\n%send = object%s\n%send\n" cl.header  
+       match cl.c_elmts, cl.elmts with
+       |[], [] -> ""
+       |_::_, []  -> Format.sprintf "class type %s = object\n%send\n" cl.name c_elmts_str   
+       |[], _::_  -> Format.sprintf "%s%s\n%send\n" cl.header self_str elmts_str   
+       |_, _   ->(Format.sprintf "%sobject\n%send = object%s\n%send\n" cl.header  
                 c_elmts_str self_str elmts_str         
        )        
     )

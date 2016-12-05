@@ -65,7 +65,11 @@ let test_suites ()=
         val p_ast = ref Nil \
         method ast = Nil \
     end" in   
-
+    
+    let ml_class_type = "class type restricted_point_type = object \
+        method get_x : int \
+        method bump : unit \
+    end" in      
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -123,7 +127,21 @@ let test_suites ()=
                     Cl_method(Tl_constraint("ast", "c_ast"), Tl_public);
                 ];
             })
-        ], ml_ptr_ast_c))
+        ], ml_ptr_ast_c));
+        "class_type", ml_class_type, 
+        Tl_class_and([
+            Tl_class({
+                name="restricted_point_type";
+                header="";
+                virt=false;
+                self=None;
+                elmts=[];
+                c_elmts=[
+                    Cl_method(Tl_constraint("get_x", "int"), Tl_public);
+                    Cl_method(Tl_constraint("bump", "unit"), Tl_public);
+                ];
+            })
+        ], ml_class_type)
     ]);
     ("suite_module", [
         ("default", ml_even_m, Tl_module( "Even", [
