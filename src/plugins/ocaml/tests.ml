@@ -166,5 +166,75 @@ let test_suites ()=
     ]);
 ]
 
+let test_suite2 ()=
+    let bodies = [
+        ("tree", "type 'a tree=Nil|Node of 'a tree*'a tree*'a and \
+        'a forest='a tree list");
+
+        ("helloc_c", "class hello = object(self) \
+            val hello:string=\"hello\" \
+            val alpha = 12 \
+            val arf = ref true \
+            method set (key:string) = 12 \
+            initializer(arf:=false) \
+        end"); 
+
+        ("even_m", "module Even = struct \
+            type t = Zero | Succ of int \
+            let alpha = Zero \
+            let hello () = print_endline \"Even\" \
+        end");
+
+        ("even_m_t", "module type Even = sig \
+            type t = Zero | Succ of int \
+            val alpha : t \
+        end");             
+
+        ("even_m_c", "module Even : sig \
+            type t = Zero | Succ of int \
+            val alpha : t \
+        end = struct \
+            type t = Zero | Succ of int \
+            let alpha = Zero \
+            let hello () = print_endline \"Even\" \
+        end");
+
+        ("even_odd", "module rec Even : sig \
+            type t = Zero | Succ of Odd.t \
+        end = struct \
+            type t = Zero | Succ of Odd.t \
+        end \
+        and Odd : sig \
+            type t = Succ of Even.t \
+        end = struct \
+            type t = Succ of Even.t \
+        end"); 
+
+        ("comparable", "module type Comparable = sig \
+            type t \
+            val compare : t -> t -> int \
+        end");                                
+
+        ("OrderList", "module OrderList (T:Comparable) = struct \
+            exception Empty \
+            type content = T.t \
+            type t = content list ref \
+            let comp = T.compare \
+        end");
+
+        ("ptr_ast", "class ptr_ast x: object \
+            val p_ast : c_ast ref \
+            method ast : c_ast \
+        end = object \
+            val p_ast = ref Nil \
+            method ast = Nil \
+        end");   
+    ] in
+    "export/import to c_ast" >:::(List.map (function name,body->(
+        let tl_ast = Tl_ast.quick_tl_ast body in
+        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_core "" tl_ast))
+    )) bodies)                         
+
 let test_structs = (make_suites "tl_ast" (test_suites()))
-let unit_tests () = run_test_tt_main test_structs
+                     
+let unit_tests () = run_test_tt_main ("">::: [test_structs; (test_suite2())])
