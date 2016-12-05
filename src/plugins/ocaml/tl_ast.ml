@@ -339,6 +339,15 @@ and tl_struct_to_str =function
           %s\
           end\n" name (tl_ast_to_str mt) (tl_ast_to_str m)      
     )
+    |Tl_recmodule(modules,_)->(
+       let str = (List.fold_left (fun str x->(
+            let _str = tl_struct_to_str x in
+            let tmp = String.sub _str 7 (String.length _str -7) in (*removed module*)                 
+            str^tmp^" and " 
+        )) "module " modules) in
+
+        String.sub str 0 (String.length str- 4)   
+    )   
     |Tl_functor(_, header, next)->(
         Format.sprintf "module %s struct\n%send\n" header (tl_ast_to_str next)
     )
@@ -348,7 +357,7 @@ and tl_struct_to_str =function
          
  
        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
-       
+
        match cl.c_elmts with
        |[]->Format.sprintf "%s%s\n%send\n" cl.header self_str elmts_str   
        |_ ->(Format.sprintf "%sobject\n%send = object%s\n%send\n" cl.header  
@@ -616,7 +625,7 @@ let c_type_to_tl_type =function
     |_->not_define "Bad core node for type_leafoo"
  )
 
-let rec split_c_constraint prefix=function
+let rec split_c_constraint prefix=function(*TODO List.rev*)
 |[]-> [], []   
 |Nil::_-> not_define "not def"
 |(Node child)::children->(
@@ -625,7 +634,7 @@ let rec split_c_constraint prefix=function
       
     match child.meta#get_value "plg_desc" with
     |Some([TStr l]) when l=t_label-> (Node child)::t_items, items
-    |Some([TStr l]) when l=label-> t_items, (Node child)::items
+    |Some([TStr l]) when l=label->t_items, (Node child)::items
     |_->not_define "not def"
 )
 
@@ -652,7 +661,7 @@ let rec c_ast_to_cl_elmt=function
         |Some [TStr "class_type_item"]->Cl_method(Tl_constraint(node.name, !(node.body)), f_visibility) 
         |_->bad_cnode "c_ast_to_cl_elmt Cl_method"                             
     )                                
-    |Some [TStr "class_type_item"]->Cl_init(!(node.body))
+    |Some [TStr "Cl_init"]->Cl_init(!(node.body))
     |_->bad_cnode "c_ast_to_cl_elmt"                             
 )
 and c_node_to_tl_ast=function
@@ -675,7 +684,7 @@ and c_node_to_tl_ast=function
             |m_t::[], m::[]->m_t, m
             |_->not_define "kfsdh"
         in
-        Tl_module_constraint(node.name, c_node_to_tl_ast m_t, c_node_to_tl_ast m)  
+        Tl_module_constraint(node.name, c_node_to_tl_ast m, c_node_to_tl_ast m_t)  
     )
     |Some([TStr("Tl_functor")])->Tl_functor(node.name, node.header, 
         c_ast_to_tl_ast node.children)
@@ -687,7 +696,7 @@ and c_node_to_tl_ast=function
         |Some([TStr("false")])->false
         |_->not_define "not def" in
         
-        let self = match (node.meta)#get_value "plg_self" with
+        let self_v = match (node.meta)#get_value "plg_self" with
         |Some([TStr ""])->None
         |Some([TStr s])->Some s             
         |_->not_define "cnc" in
@@ -698,9 +707,9 @@ and c_node_to_tl_ast=function
             name=node.name;
             header=node.header;
             virt=f_virt;
-            self=self;
-            elmts=List.map c_ast_to_cl_elmt c_t;
-            c_elmts=List.map c_ast_to_cl_elmt c;  
+            self=self_v;
+            elmts=List.map c_ast_to_cl_elmt c;
+            c_elmts=List.map c_ast_to_cl_elmt c_t;  
         })
     )
     |Some([TStr("Tl_class_and")])->Tl_class_and(c_ast_to_tl_ast node.children ,

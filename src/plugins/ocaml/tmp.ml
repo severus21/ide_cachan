@@ -1,10 +1,10 @@
-type c_ast = Nil| Node of string * string * string * c_ast list
-
-class ptr_ast x: object
-    val p_ast: c_ast ref
-    
-    method ast : c_ast   
-end = object
-    val p_ast = ref Nil
-    method  ast = Nil             
-end 
+module rec Even : sig 
+            type t = Zero | Succ of Odd.t 
+        end = struct 
+            type t = Zero | Succ of Odd.t 
+        end 
+        and Odd : sig 
+            type t = Succ of Even.t 
+        end = struct 
+            type t = Succ of Even.t 
+        end
