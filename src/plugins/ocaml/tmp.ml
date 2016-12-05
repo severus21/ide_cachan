@@ -16,7 +16,12 @@ module OrderList (T:Comparable) = struct
         let comp = T.compare 
     end
  *)
-class type restricted_point_type = object
-  method get_x : int
-  method bump : unit
-end;;
+
+class ordre = object
+    val x = 5
+end  
+
+class ordre2 = object
+    inherit ordre
+    val y = 77
+end
