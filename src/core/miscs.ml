@@ -1,10 +1,10 @@
 open Gset
 
-let counter_miscs = ref 0 
+(*let counter_miscs = ref 0 *)
 
 type c_node =
 |Nil 
-|Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset metaData} 
+|Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset tags} 
 and c_ast = c_node list                              
 
 class ptr_ast (_ast:c_ast)=object
@@ -13,7 +13,7 @@ class ptr_ast (_ast:c_ast)=object
     method ast= !(p_ast)             
 
 (*remettre les méthode pour string*)
-    method to_file name_file =
+    (*method to_file name_file =
       let rec to_file_aux =function
         |Nil -> output_string name_file ("Nil:\n");
         |Node node ->
@@ -32,7 +32,7 @@ class ptr_ast (_ast:c_ast)=object
       output_string name_file ("Ast:\n");
       List.iter to_file_aux (! p_ast);
       output_string name_file ("FAst\n")
-           
+     *)     
 end                      
 
 exception Bad_cnode of string
@@ -49,12 +49,12 @@ and c_ast_to_str tab ast=String.concat "" (List.map (c_node_to_str (tab^"\t")) a
 
 let print_c_ast ast= Printf.printf "%s\n" (c_ast_to_str "" ast)            
 
-            
+(*            
 let print a = Printf.printf "%s" a
   
 let node1 = Nil
 let body = ref "ok"
-let node2 = Node {name= "bla";header="bla dodo";body = body;children=[node1]}
+let node2 = Node {name= "bla";header="bla dodo";body = body;children=[node1]; meta=new tags}
 let node3 = new ptr_ast ([node1;node2])
 let () = 
   let file = open_out "love" in
@@ -65,4 +65,4 @@ let () =
   print (input_line file);
   print (input_line file);
   seek_in file a;
-  print (input_line file)
+  print (input_line file)*)
