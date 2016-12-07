@@ -2,12 +2,12 @@ language: c++
 sudo: required
 
 install: ./install-dependencies.sh
-      
-script: 
-    - make runtests
-    - make doc
-    - make default
-    - make clean  
-  
+
+script:
+    - eval `opam config env` && make runtests
+    - eval `opam config env` && make doc
+    - eval `opam config env` && make default
+    - make clean
+
 env:
     - OCAML_VERSION=4.04.0
