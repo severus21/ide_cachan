@@ -1,8 +1,17 @@
-open Gobject.Data
-open Core
+open Core.Gset
 
+(** This is an abstract class representing a list of subitems to be shown
+ * on the rightmost column of the GuiNavlist *)
 class virtual item_list (root:'a set) = object(self)
+    (* The methods to implement *)
+    (** Name of the list, displayed in the center column *)
     method virtual name : string
+
+    (** Filters which subitems to show *)
+    method virtual private filter : 'a -> bool
+
+    (* The base methods *)
+    (** Applies f to all items and subitems of root *)
     method private iter f =
         let rec _iter item =
             match item#children with
@@ -10,7 +19,8 @@ class virtual item_list (root:'a set) = object(self)
             | _  -> List.iter _iter item#children
         in
         _iter root
-    method virtual private filter : 'a -> bool
+
+    (** Returns a list of the subitems to show *)
     method get =
         let items = ref [] in
         let _filter =
@@ -19,6 +29,7 @@ class virtual item_list (root:'a set) = object(self)
         !items
 end
 
+(** This sublcass of item_list shows all subitems *)
 class all_items (root:'a set) = object
     inherit item_list root
     method name = "- All -"
@@ -46,9 +57,9 @@ class navlist ~packing ~root =
         view
     in
     let _cols = new GTree.column_list in
-    let _col1 = _cols#add caml
-    and _col2 = _cols#add caml
-    and _col3 = _cols#add caml in
+    let _col1 = _cols#add Gobject.Data.caml
+    and _col2 = _cols#add Gobject.Data.caml
+    and _col3 = _cols#add Gobject.Data.caml in
     let _model1 = GTree.tree_store _cols
     and _model2 = GTree.list_store _cols
     and _model3 = GTree.list_store _cols in
@@ -67,20 +78,17 @@ class navlist ~packing ~root =
         val view2 = _view2
         val view3 = _view3
 
-        (** Sets the data in the hierarchy tree *)
+        (** Sets the data in the hierarchy tree (leftmost column) *)
         method private fill_tree (data:gset) =
             model1#clear ();
             let rec fill ?(parent:Gtk.tree_iter option) (value:gset) =
-                let iter = match parent with
-                | Some(p) -> model1#append ~parent:p ()
-                | None -> model1#append ()
-                in
+                let iter = model1#append ?parent () in
                 model1#set ~row:iter ~column:col1 value;
                 List.iter (fun a -> fill ~parent:iter a) value#children
             in
             fill data
 
-        (** Sets the data in the method lists col *)
+        (** Sets the data in the method lists col (center column) *)
         method private fill_lists lists =
             model2#clear ();
             let fill (value:item_list) =
@@ -89,7 +97,7 @@ class navlist ~packing ~root =
             in
             List.iter fill lists
 
-        (** Sets the data in the methods col *)
+        (** Sets the data in the methods col (rightmost column) *)
         method private fill_methods methods =
             model3#clear ();
             let fill (value:gset) =
@@ -106,6 +114,7 @@ class navlist ~packing ~root =
             | 3 -> (view3#get_column 0)#set_title title
             | _ -> failwith (Printf.sprintf "No such column (%i)" col)
 
+        (** Callback on selection event on the leftmost column *)
         method private item_selected () =
             model3#clear ();
             let selection = view1#selection in
@@ -113,10 +122,16 @@ class navlist ~packing ~root =
                 let row = model1#get_iter path in
                 model1#get ~row ~column:col1
             in
-            match selection#get_selected_rows with
+            (match selection#get_selected_rows with
             | [p] -> self#fill_lists [(new all_items (get p):> item_list)]
-            | _ -> ()
+            | []  -> ()
+            | _   -> assert false);
+            let first_list = model2#get_iter_first in
+            match first_list with
+            | Some first -> view2#selection#select_iter first
+            | None -> ()
 
+        (** Callback on selection event on the center column *)
         method private list_selected () =
             let selection = view2#selection in
             let get path =
@@ -125,8 +140,10 @@ class navlist ~packing ~root =
             in
             match selection#get_selected_rows with
             | [p] -> self#fill_methods ((get p)#get)
-            | _ -> ()
+            | []  -> ()
+            | _   -> assert false
 
+        (** Callback on selection event on the rightmost column *)
         method private method_selected () =
             let selection = view3#selection in
             let get path =
@@ -135,8 +152,10 @@ class navlist ~packing ~root =
             in
             match selection#get_selected_rows with
             | [p] -> Printf.printf "%s\n" ((get p)#to_string)
-            | _ -> ()
+            | []  -> ()
+            | _   -> assert false
 
+        (** Fill in the leftmost column tree and connect events *)
         initializer
             self#fill_tree root;
             ignore(view1#selection#connect#changed

@@ -1,7 +1,7 @@
-open Dep_graph_build
-open Gui
+(*open Dep_graph_build*)
+open Gui.GuiMain
 
 let () =
     Printf.printf "%s\n" "*********************** IDE ***********************";
-gui ()
-let () = build_graph []
+    main ()
+(*let () = build_graph []*)

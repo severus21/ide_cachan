@@ -5,3 +5,5 @@
 <src/plugins/ocaml/*.cmx>: for-pack(Plugins.Ocaml)
 "src/core":include
 <src/core/*.cmx>: for-pack(Core)
+"src/gui":include
+<src/gui/*.cmx>: for-pack(Gui)
