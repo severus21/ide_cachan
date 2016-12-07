@@ -1,22 +1,23 @@
 DEBUG_OPTION=-g
 SOURCE_DIR=src/
 
-BUILD=ocamlbuild \
-	  -I src -I tests \
+PACKAGES=-package lablgtk2 -package oUnit -package compiler-libs.common
+BUILD=ocamlbuild -r\
 	  -build-dir "$(BUILD_DIR)" \
 	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47-48@49..59" \
-	  -package lablgtk2 -package oUnit -package compiler-libs.common\
+	  $(PACKAGES)\
 
 BUILD_DIR=debug/
 
-default:
+DOC_DIR=ide.docdir
+
+
+default: clean
 	@rm -f ide.debug
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)/src/ide.native ide.debug
 
-test :
-	BUILD_DIR=test/
-	TARGET=test
+test : clean
 	@rm -f test.debug
 	$(BUILD) tests/test.native
 	@ln -s $(BUILD_DIR)/tests/test.native test.debug
@@ -24,20 +25,25 @@ test :
 runtests : test
 	./test.debug
 
-release:
-	DEBUG_OPTION=
-	TARGET=ide
-	BUILD_DIR=release/
-	@rm -f $(TARGET).release
-	$(BUILD)$(SOURCE_DIR)$(TARGET).native
+plugins: clean
+	@rm -f plugin.debug
+	$(BUILD) src/plugins/plugin.native
+	@ln -s $(BUILD_DIR)/src/plugins/plugin.native plugin.debug
 
-	@ln -s $(BUILD_DIR)$(SOURCE_DIR)ide.native ide.release
+release: clean
+	@rm -f ide.release
+	$(BUILD) src/ide.native
+	@ln -s $(BUILD_DIR)src/ide.native ide.release
+
+doc :clean 
+	ocamlbuild -use-ocamlfind $(PACKAGES) $(DOC_DIR)/index.html
+
 
 clean:
 	@rm -rf debug/
 	@rm -rf release/
-	@rm -f oUnit*
 	@ocamlbuild -clean
 
-mrpropre: clean
-	@rm -f *.debug *.release *.dvi *.tex *.log *.pdf *.aux
+mrproper: clean
+	@rm -f *.debug *.release *.dvi *.tex *.log *.pdf *.aux oUnit*
+	@rm -rf doc/
