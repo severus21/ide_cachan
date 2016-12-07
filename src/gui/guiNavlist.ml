@@ -1,4 +1,4 @@
-open Core
+open Core.Gset
 
 (** This is an abstract class representing a list of subitems to be shown
  * on the rightmost column of the GuiNavlist *)

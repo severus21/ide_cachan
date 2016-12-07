@@ -35,7 +35,7 @@ let find_dialog parent root =
         let view     = GTree.view ~model ~packing () in
         let renderer = GTree.cell_renderer_text [] in
         let cell_data_func (model:GTree.model) iter =
-            let set:Core.gset = model#get ~row:iter ~column in
+            let set:Core.Gset.gset = model#get ~row:iter ~column in
             renderer#set_properties [`TEXT set#name]
         in
         let viewcol = GTree.view_column ~renderer:(renderer, []) () in

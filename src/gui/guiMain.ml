@@ -1,5 +1,6 @@
 open GMain
 open GdkKeysyms
+module Gset = Core.Gset
 
 let locale = GtkMain.Main.init ();;
 
@@ -17,7 +18,7 @@ let confirm_quit () =
     | _ -> false
 ;;
 
-let gui () =
+let main () =
     let window = GWindow.window ~resizable:true ~width:1280 ~height:720
                                     ~title:"Awesome Ocaml IDE"
                                     ~position:`CENTER () in
@@ -43,13 +44,13 @@ let gui () =
         ~callback: (fun () -> if confirm_quit () then Main.quit ()));
 
     let test_set =
-        let a = new Core.set("A")
-        and aa = new Core.set("AA")
-        and ab = new Core.set("AB") in
+        let a = new Gset.set("A")
+        and aa = new Gset.set("AA")
+        and ab = new Gset.set("AB") in
         a#add_child aa;
         a#add_child ab;
-        let b = new Core.set("B")
-        and ba = new Core.set("BA") in
+        let b = new Gset.set("B")
+        and ba = new Gset.set("BA") in
         b#add_child ba;
         a
     in
