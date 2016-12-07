@@ -1,6 +1,14 @@
 (** This module contains functions allowing to manipulate ocaml top-level ast*)
 (***)
 
+
+exception Not_define of string
+exception Bad_ast of string  
+
+val not_define : string->'a
+val bad_ast : string ->'a                           
+   
+
 (** method visibility inside class*)
 type tl_visibility = Tl_private | Tl_public
 
@@ -62,29 +70,3 @@ and class_elmt=
 |Cl_inherit of string * string option
 (** Top-level ast type*)
 and tl_ast = tl_struct list
-
-
-(**Opens a file and returns its ocaml ast*)
-val file_to_ast : string ->  Parsetree.structure_item list
-
-(** Transform a string containing some ml code into a parsetree*)
-val string_to_ast : string -> Parsetree.structure_item list
-
-(** Prints a parsetree *)
-val print_ast : Parsetree.structure_item list -> unit
-
-
-(** Converts a parsetree into a tl_ast *)
-val string_to_tl_ast : string  -> tl_ast
-
-(** Prints a tl_ast *)
-val print_tl_ast : tl_ast -> unit
-
-(** Unit tests for the Tl_ast module*)
-(*val unit_tests : unit -> unit*)
-val quick_tl_ast: string -> tl_ast
-val quick_tl_struct: string -> tl_struct 
-
-                               
-val tl_ast_to_core : string->tl_ast->Core.Miscs.c_ast
-val c_ast_to_tl_ast : Core.Miscs.c_ast->tl_ast

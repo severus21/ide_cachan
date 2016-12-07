@@ -1,9 +1,12 @@
 open OUnit2
-open Tl_ast
+
+open Tl_ast  
+open Ml_to_tl
+open Tl_to_c  
 
 let make_suite name suite =
     name >::: (List.map( function (name,ml,tl_struct)->
-        name>::function _-> assert_equal (Tl_ast.quick_tl_struct ml) tl_struct
+        name>::function _-> assert_equal (quick_tl_struct ml) tl_struct
     ) suite)
 
 let make_suites name suites =
@@ -68,7 +71,7 @@ let test_suites ()=
     end" in   
     
     let ml_class_type = "class type restricted_point_type = object \
-        inherit dwarf \                             
+        inherit dwarf \
         method get_x : int \
         method bump : unit \
     end" in      
@@ -253,7 +256,7 @@ let test_suite2 ()=
         end");   
     ] in
     "export/import to c_ast" >:::(List.map (function name,body->(
-        let tl_ast = Tl_ast.quick_tl_ast body in
+        let tl_ast = quick_tl_ast body in
         name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_core "" tl_ast))
     )) bodies)                         
 
