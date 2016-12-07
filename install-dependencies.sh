@@ -24,6 +24,8 @@ echo "let () =
         with Not_found -> ()
   ;;">> ~/.ocamlinit
 
+export OCAML_TOPLEVEL_PATH=/home/travis/.opam/4.04.0/lib/toplevel
+
 unset OCAMLLIB
 
 opam install ${OPAM_DEPENDS}
