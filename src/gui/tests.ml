@@ -1,5 +1,5 @@
 open OUnit2
-open GuiFindDialog
+open Utils
 
 let test_same_letter _ =
     assert_equal (is_subword "a" "a") true
