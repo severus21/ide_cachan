@@ -262,4 +262,4 @@ let test_suite2 ()=
 
 let test_structs = (make_suites "tl_ast" (test_suites()))
                      
-let unit_tests () = run_test_tt_main ("">::: [test_structs; (test_suite2())])
+let unit_tests () = "">::: [test_structs; (test_suite2())]

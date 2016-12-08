@@ -4,4 +4,10 @@ src/plugins/ocaml/Ml_to_tl
 src/plugins/ocaml/Tl_to_c
 src/plugins/ocaml/Tests
 
+src/core/Gset
+
+src/gui/GuiMain
+src/gui/GuiNavlist
+src/gui/GuiFindDialog
+
 tests/Test

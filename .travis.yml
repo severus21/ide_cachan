@@ -1,13 +1,18 @@
 language: c++
 sudo: required
 
+before_install:
+    - "export DISPLAY=:99.0"
+    - "sh -e /etc/init.d/xvfb start"
+    - sleep 3
+
 install: ./install-dependencies.sh
-      
-script: 
-    - make runtests
-    - make doc
-    - make default
-    - make clean  
-  
+
+script:
+    - eval `opam config env` && make runtests
+    - eval `opam config env` && make doc
+    - eval `opam config env` && make default
+    - make clean
+
 env:
     - OCAML_VERSION=4.04.0

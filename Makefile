@@ -5,7 +5,7 @@ PACKAGES=-package lablgtk2 -package oUnit -package compiler-libs.common
 BUILD=ocamlbuild -r \
 	  -build-dir "$(BUILD_DIR)" \
 	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47-48@49..59" \
-	  $(PACKAGES)\
+	  $(PACKAGES)
 
 BUILD_DIR=debug/
 
@@ -35,7 +35,7 @@ release: clean
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)src/ide.native ide.release
 
-doc :clean 
+doc :clean
 	ocamlbuild -use-ocamlfind $(PACKAGES) $(DOC_DIR)/index.html
 
 
