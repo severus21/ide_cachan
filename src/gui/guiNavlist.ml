@@ -39,14 +39,17 @@ end
 (* This is the miller column type gui item to navigate the hierarchy *)
 class navlist ~packing ~root =
     let hbox = GPack.hbox ~packing () in
+    (* This function tells the column view how to render sets *)
     let gset_data_func renderer column (model:GTree.model) iter =
         let set:gset = model#get ~row:iter ~column in
         renderer#set_properties [`TEXT set#name]
     in
+    (* This function tells the column view how to render an item_list *)
     let item_list_data_func renderer column (model:GTree.model) iter =
         let il:item_list = model#get ~row:iter ~column in
         renderer#set_properties [`TEXT il#name]
     in
+    (* This is an helper function factoring the code to make a view *)
     let make_view model column data_func =
         let view = GTree.view ~model ~packing:hbox#add () in
         let renderer = GTree.cell_renderer_text [] in
