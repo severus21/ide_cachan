@@ -23,7 +23,7 @@ test : clean
 	@ln -s $(BUILD_DIR)/tests/test.native test.debug
 
 runtests : test
-	./test.debug
+	./test.debug -no-cache-filename -output-file test_logs.log
 
 plugins: clean
 	@rm -f plugin.debug
