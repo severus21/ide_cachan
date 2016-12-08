@@ -5,6 +5,7 @@ src/plugins/ocaml/Tl_to_c
 src/plugins/ocaml/Tests
 
 src/core/Gset
+src/core/Miscs
 
 src/gui/GuiMain
 src/gui/GuiNavlist

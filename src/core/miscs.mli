@@ -19,4 +19,27 @@ class ptr_ast : c_ast -> object
     method ast : c_ast   
 end                      
 
+type plug = <
+file_extensions:string list list; (** 
+    This list represents the file extensions that the plugin can import.
+	The plugin can ask for several files of the same name but of different 
+	extensions for the import (e.g. ["ml","mli"] means that the plugin 
+	can import a Core.gset from the files my_file.ml my_file.mli).
+
+	When the project has been explored for the first extension list, 
+	we continue with the tail of the list but we ignore the files already
+	imported (e.g. [["ml";"mli"];["ml"]]) *)
+
+string_to_c_ast:string->string->c_ast;(**
+    Construct a c_ast from file
+    @param filename full path
+    @param str string of file
+    @return the c_ast related to file*) 
+
+c_ast_to_str:c_ast->string(** 
+    Export a c_ast to str
+    @param ast : c_ast to export
+    @return the string(ocaml code) related to ast*)
+>
+
 val print_c_ast : c_ast->unit                              
