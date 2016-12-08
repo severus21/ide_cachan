@@ -1,19 +1,12 @@
 open Sys
 open Filename
 
-(*Extension lists*)
-let extension = [["ml";"mli"];["ml"]]
 
-(*Permit to have all file in the current directory*)
-let ls () = Sys.readdir (Filename.current_dir_name)
+let ls path = Sys.readdir path
 
-
-let start_path = Filename.concat ("src"^dir_sep) ("parcoursDossier"^dir_sep)
   
-
-
-let get_dir array = 
-  List.partition (fun x -> is_directory x) (Array.to_list array)
+let get_dir array path = 
+  List.partition (fun x -> is_directory (Filename.concat path x)) (Array.to_list array)
 
 
 let end_of_word word tail_word length_tail_word=
@@ -36,14 +29,13 @@ let add_path list dir =
   List.map (fun x -> Filename.concat dir x) list 
 
 
-let rec iterate ext =
-  let array = ls () in
-  let dir, file =  get_dir array in
+let rec iterate ext start_path=
+  let array = ls start_path in
+  let dir, file =  get_dir array start_path in
   let f x =  
-    Sys.chdir x;
-    let a = add_path (iterate ext) x in
-    Sys.chdir (Filename.parent_dir_name);
-    a
+    let path = Filename.concat start_path x in
+    add_path (iterate ext path) x
+    
   in
   let b = (get_ext ext (String.length ext) file) in
   List.concat [List.concat (List.map f dir) ; b]
@@ -83,13 +75,13 @@ let inter list1 list2 list3 ext1 ext2=
 
 
 
-let prob ext1 ext2 =
+let prob ext1 ext2 start_path=
   let rec aux exta extb list1 list2=  
     match exta with
     |[]-> list1, list2
     |x::t-> 
       begin
-        let lista = List.map (supp_ext x) (iterate x) in 
+        let lista = List.map (supp_ext x) (iterate x start_path) in 
         let f = List.mem x ext2 in
         let extb' = if f then x::extb else extb in
         let list1',list2' = if f then inter list1 lista list2 extb (Some x)
@@ -99,18 +91,27 @@ let prob ext1 ext2 =
   in
   let ext = List.hd ext1 in
   if List.mem ext ext2 
-  then aux (List.tl ext1) [ext] (List.map (supp_ext ext) (iterate ext)) []
-  else aux (List.tl ext1) [] (List.map (supp_ext ext) (iterate ext)) []
+  then aux (List.tl ext1) [ext] (List.map (supp_ext ext) (iterate ext start_path)) []
+  else aux (List.tl ext1) [] (List.map (supp_ext ext) (iterate ext start_path)) []
 
-let main ext1 ext2 = 
-  let l1,l2 = prob ext1 ext2 in
+let main ext1 ext2 start_path= 
+  
+  let l1,l2 = prob ext1 ext2 start_path in
   let l1 = add_path l1 start_path in
   let l2 = add_path l2 start_path in
-  let l1' = reset_ext l1 ext1 in
+  let l1' = reset_ext ext1 l1 in
   l1',l2
 
 
-let list3,list4 = main ext1 ext2
+
+
+
+let ext1 = ["ml";"mli"]
+let ext2 = ["ml"]
+
+let start_path = "/import/rzucchin/M1/GenieLog/ide_cachan/src/parcoursDossier/"
+
+let list3,list4 = main ext1 ext2 start_path
 
 let () =
   Printf.printf "liste commune :\n";  
@@ -118,4 +119,4 @@ let () =
   Printf.printf "\nliste non commune :\n" ; 
   List.iter (fun x-> Printf.printf "%s;" x) list4;  
   Printf.printf "\n"
-(*Comportement bizarre de add_path*)
+
