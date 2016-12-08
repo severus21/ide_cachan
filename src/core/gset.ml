@@ -1,4 +1,4 @@
-type 'a tag_element = 
+type 'a tag_element =
 | TStr of string
 | TRef of 'a
 | TDepend of string list;;
@@ -45,7 +45,7 @@ class ['a] tags = object(self)
     !s
 
   method private to_file_aux values name_file =
-    List.iter (fun prec -> begin 
+    List.iter (fun prec -> begin
     match prec with
     | TStr(x) -> output_string name_file ("string :"^x^"\n")
     | _ -> () (*[Reb] TODO*)
@@ -58,7 +58,7 @@ class ['a] tags = object(self)
     Hashtbl.iter (fun _ values -> (self#to_file_aux values name_file)) tag_htbl
 (*
   method private from_file_aux values name_file =
-    List.iter (fun prec -> begin 
+    List.iter (fun prec -> begin
     match prec with
     | TStr(x) -> output_string name_file ("string :"^x^"\n")
     | _ -> () (*[Reb] TODO*)
