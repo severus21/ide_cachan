@@ -1,13 +1,9 @@
 exception Not_define of string
 let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" )) 
-exception Bad_ast of string
-let bad_ast msg = raise (Bad_ast( "src/tl_ast.ml : "^msg^"\n" )) 
+exception Bad_tl_ast of string
+let bad_tl_ast msg = raise (Bad_tl_ast( "src/tl_ast.ml : "^msg^"\n" )) 
 (** TODO
-  *
-  * extand class
-  * inherit, class signature
-  * basic-left pattern
-  *
+  * extand class, module
   * rewrite and factorize
   *)
 
@@ -27,7 +23,13 @@ type tl_struct =
 |Tl_module_constraint of string * tl_struct* tl_struct
 |Tl_functor of string * string * tl_ast                                      
 |Tl_recmodule of tl_ast * string                                        
-|Tl_class of {name:string; header:string; virt:bool; self:string option; elmts:class_elmt list; c_elmts: class_elmt list}
+|Tl_class of {
+    name: string; 
+    header:string; 
+    virt: bool; 
+    self: string option; 
+    elmts: class_elmt list; 
+    c_elmts: class_elmt list}
 |Tl_class_and of tl_struct list * string
 and class_elmt=
 |Cl_method of tl_struct * tl_visibility

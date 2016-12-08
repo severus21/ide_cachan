@@ -6,7 +6,7 @@ open Tl_to_c
 
 let make_suite name suite =
     name >::: (List.map( function (name,ml,tl_struct)->
-        name>::function _-> assert_equal (quick_tl_struct ml) tl_struct
+        name>::function _-> assert_equal (str_to_tl_struct ml) tl_struct
     ) suite)
 
 let make_suites name suites =
@@ -256,8 +256,8 @@ let test_suite2 ()=
         end");   
     ] in
     "export/import to c_ast" >:::(List.map (function name,body->(
-        let tl_ast = quick_tl_ast body in
-        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_core "" tl_ast))
+        let tl_ast = str_to_tl_ast body in
+        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_c_ast "" tl_ast))
     )) bodies)                         
 
 let test_structs = (make_suites "tl_ast" (test_suites()))

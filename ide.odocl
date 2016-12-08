@@ -1,5 +1,7 @@
+src/plugins/ocaml/Frontend
 src/plugins/ocaml/Tl_ast
-src/plugins/ocaml/Plugin_fe
-src/structure/Core
-src/structure/Class
-src/structure/Module
+src/plugins/ocaml/Ml_to_tl
+src/plugins/ocaml/Tl_to_c
+src/plugins/ocaml/Tests
+
+tests/Test

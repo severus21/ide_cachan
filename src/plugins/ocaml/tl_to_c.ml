@@ -40,7 +40,7 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
                 meta = meta;
             }]
         )
-        |_-> bad_ast "cl_elmt_to_core : Cl_attribut"
+        |_-> bad_tl_ast "cl_elmt_to_core : Cl_attribut"
     )           
     |Cl_method(tl_s, tl_v)->(
         let header = match tl_v with|Tl_private->"private"|Tl_public->"public" in
@@ -66,7 +66,7 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
                 meta = meta;
             }]
         )
-        |_->bad_ast "cl_elmt_to_core : Cl_method"                       
+        |_->bad_tl_ast "cl_elmt_to_core : Cl_method"                       
     )     
     |Cl_init(body)->(
         meta#add_tag "plg_ast" ([TStr "Cl_init"]:gset tag);
@@ -158,7 +158,7 @@ and tl_struct_to_core np tl_struct=
             name = name;
             header = "";
             body = ref "";
-            children = tl_ast_to_core (np^"."^name) ast;
+            children = tl_ast_to_c_ast (np^"."^name) ast;
             meta=meta})]    
     )      
     |Tl_sign(name, ast) ->(
@@ -167,7 +167,7 @@ and tl_struct_to_core np tl_struct=
             name = name;
             header = "";
             body = ref "";
-            children = tl_ast_to_core (np^"."^name) ast;
+            children = tl_ast_to_c_ast (np^"."^name) ast;
             meta=meta})]  
     )      
     |Tl_module_constraint(name, m, m_t) ->(
@@ -194,7 +194,7 @@ and tl_struct_to_core np tl_struct=
             name = name;
             header = header;
             body = ref "";
-            children = tl_ast_to_core (np^"."^name) ast;
+            children = tl_ast_to_c_ast (np^"."^name) ast;
             meta=meta})]
     )      
     |Tl_recmodule(modules, body) ->(
@@ -203,7 +203,7 @@ and tl_struct_to_core np tl_struct=
             name = "";
             header = "";
             body = ptr np body;
-            children = tl_ast_to_core np modules;
+            children = tl_ast_to_c_ast np modules;
             meta=meta})]
     )      
     |Tl_class cl->( 
@@ -235,10 +235,10 @@ and tl_struct_to_core np tl_struct=
             name = "";
             header = "";
             body = ptr np body;
-            children = tl_ast_to_core np cls;
+            children = tl_ast_to_c_ast np cls;
             meta=meta})]
     ) 
-and tl_ast_to_core np = function tl_ast -> 
+and tl_ast_to_c_ast np = function tl_ast -> 
     List.concat (List.map (tl_struct_to_core np) tl_ast)
 
 

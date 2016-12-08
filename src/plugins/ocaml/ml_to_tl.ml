@@ -6,8 +6,8 @@ open Tl_ast
 (* ** BEGIN Miscellaneous functions** *)
 
 (**Opens a file and returns its ocaml ast*)
-let file_to_ast f = 
-  Parse.implementation (Lexing.from_channel (open_in f)) 
+let file_to_ast path = 
+  Parse.implementation (Lexing.from_channel (open_in path)) 
 
 let string_to_ast str =
   Parse.implementation (Lexing.from_string str)
@@ -291,7 +291,7 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
 (*ml is a string containing the whole file from which ast was created *)
 and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
     
-let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)
+(*let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)*)
 
 
 (* ***END Conversion from ast to tl_ast*)
@@ -375,8 +375,8 @@ let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 (* ***BEGIN Some functions to test more easily *)
 
 let ast_from_string s = Parse.implementation (Lexing.from_string s) 
-let quick_tl_ast s = ast_to_tl_ast s (ast_from_string s)
-let quick_tl_struct s = List.hd (quick_tl_ast s)
+let str_to_tl_ast s = ast_to_tl_ast s (ast_from_string s)
+let str_to_tl_struct s = List.hd (str_to_tl_ast s)
 
 (* ***END Some functions to test more easily *)
 
