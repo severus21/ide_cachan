@@ -15,3 +15,4 @@ release/
 oUnit*
 ide.docdir
 _build/
+love
