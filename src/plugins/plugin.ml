@@ -6,8 +6,8 @@ let () =
     let plug = make_plg Ocaml in
 
       
-    let str = file_to_string "src/plugins/ocaml/compile.ml" in
-    let str2 = plug#c_ast_to_str (plug#string_to_c_ast "tmp.ml" str) in
+    let str = file_to_string "src/plugins/extract.mli" in
+    let str2 = plug#c_ast_to_str (plug#string_to_c_ast str) in
     
     Printf.printf "%s" str2;
 

@@ -264,7 +264,7 @@ let test_suite2 ()=
     ] in
     "export/import to c_ast" >:::(List.map (function name,body->(
         let tl_ast = str_to_tl_ast body in
-        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_c_ast "" tl_ast))
+        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_c_ast tl_ast))
     )) bodies)                         
 
 let test_structs = (make_suites "tl_ast" (test_suites()))

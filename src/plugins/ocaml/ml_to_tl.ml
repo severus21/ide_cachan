@@ -297,7 +297,7 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
 
 
 (*ml is a string containing the whole file from which ast was created *)
-and ast_to_tl_ast ml ast = (print_ast ast ;List.map (struct_to_tl_struct ml) ast)
+and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
     
 (*let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)*)
 
@@ -388,3 +388,33 @@ let str_to_tl_struct s = List.hd (str_to_tl_ast s)
 
 (* ***END Some functions to test more easily *)
 
+(** 
+*   @param (rule number, entry)
+* *)                  
+
+let rec path_to_name=function
+|""->"" 
+|path->(
+    let name = Filename.basename path in
+    if String.length name>0 then Bytes.set name 0 (Char.uppercase_ascii name.[0]);  
+   
+    (path_to_name (Filename.dirname path)) ^ name    
+) 
+  
+let entry_to_tl_struct =function(*il faudrait un truc comme un numero de rule*)
+|0,ml::mli::[] ->(
+    let name = path_to_name ml in
+    Tl_module_constraint(name, Tl_module(name, str_to_tl_ast (Utility.file_to_string ml)), 
+                     Tl_sign(name, str_to_tl_ast (Utility.file_to_string mli)))
+ )
+|1,ml::[] ->(
+    let name = path_to_name ml in
+    Tl_module(name, str_to_tl_ast(Utility.file_to_string ml))
+
+ )  
+|_->not_define "rule_to_tl_ast bad rule"   
+
+     
+let entries_to_tl_ast (num_rule,entries)=
+    List.map (fun e->entry_to_tl_struct(num_rule,e)) entries    
+                                           (*pathcer scand if ath is a file*)

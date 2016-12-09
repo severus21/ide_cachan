@@ -30,9 +30,10 @@ file_extensions:string list list; (**
 	we continue with the tail of the list but we ignore the files already
 	imported (e.g. [["ml";"mli"];["ml"]]) *)
 
-string_to_c_ast:string->string->c_ast;(**
+path_to_c_ast:string->c_ast;(** TODO*)
+
+string_to_c_ast:string->c_ast;(**
     Construct a c_ast from file
-    @param filename full path
     @param str string of file
     @return the c_ast related to file*) 
 

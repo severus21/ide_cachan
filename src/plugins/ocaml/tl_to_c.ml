@@ -158,7 +158,7 @@ and tl_struct_to_core np tl_struct=
             name = name;
             header = "";
             body = ref "";
-            children = tl_ast_to_c_ast (np^"."^name) ast;
+            children = _tl_ast_to_c_ast (np^"."^name) ast;
             meta=meta})]    
     )      
     |Tl_sign(name, ast) ->(
@@ -167,7 +167,7 @@ and tl_struct_to_core np tl_struct=
             name = name;
             header = "";
             body = ref "";
-            children = tl_ast_to_c_ast (np^"."^name) ast;
+            children = _tl_ast_to_c_ast (np^"."^name) ast;
             meta=meta})]  
     )      
     |Tl_module_constraint(name, m, m_t) ->(
@@ -194,7 +194,7 @@ and tl_struct_to_core np tl_struct=
             name = name;
             header = header;
             body = ref "";
-            children = tl_ast_to_c_ast (np^"."^name) ast;
+            children = _tl_ast_to_c_ast (np^"."^name) ast;
             meta=meta})]
     )      
     |Tl_recmodule(modules, body) ->(
@@ -203,7 +203,7 @@ and tl_struct_to_core np tl_struct=
             name = "";
             header = "";
             body = ptr np body;
-            children = tl_ast_to_c_ast np modules;
+            children = _tl_ast_to_c_ast np modules;
             meta=meta})]
     )      
     |Tl_class cl->( 
@@ -235,12 +235,13 @@ and tl_struct_to_core np tl_struct=
             name = "";
             header = "";
             body = ptr np body;
-            children = tl_ast_to_c_ast np cls;
+            children = _tl_ast_to_c_ast np cls;
             meta=meta})]
     ) 
-and tl_ast_to_c_ast np = function tl_ast -> 
+and _tl_ast_to_c_ast np = function tl_ast -> 
     List.concat (List.map (tl_struct_to_core np) tl_ast)
 
+let tl_ast_to_c_ast = _tl_ast_to_c_ast ""
 
 let c_type_to_tl_type =function
 |Nil->not_define "Bad core node for type_leaf"

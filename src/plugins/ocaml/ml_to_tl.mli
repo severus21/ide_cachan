@@ -16,6 +16,9 @@ val string_to_ast : string -> Parsetree.structure_item list
     @param ast parstree to print *)
 val print_ast : Parsetree.structure_item list -> unit
 
+(** TODO
+  *)
+val entries_to_tl_ast : int * string list list -> tl_ast
 
 (** Transform  a string containing some ml code into a tl_ast 
     @param str string representing a piece of caml code

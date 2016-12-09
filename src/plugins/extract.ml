@@ -8,7 +8,9 @@ let dirs_files_of items=
 
 (** Return all the files in a directory and in its subdirs(recursively)
     @param the path of the directory to scan
-    @return a list of files in asc order*)
+    @return a list of files in asc order, 
+       if path is a file then [path]
+       if path is not valid then []*)
 let scandir path=
     let rec _scandir =fun acc path->
         let items = List.map (Filename.concat path) (Array.to_list (Sys.readdir path))in
@@ -16,8 +18,11 @@ let scandir path=
         List.fold_left _scandir (acc@files) subdirs     
     in
     
-    List.fast_sort String.compare (_scandir [] path)
-
+    try
+        if Sys.is_directory path then  
+            List.fast_sort String.compare (_scandir [] path)
+        else [path]
+    with Sys_error _ -> []
 
 let extract_from_rules path rules=
     let files = scandir path in
