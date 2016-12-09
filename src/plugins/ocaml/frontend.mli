@@ -1,4 +1,5 @@
-(**TODO extend some generic frontend*)
+(** Export the Ocaml plugin API *)
                                          
-(** TODO Create a plg_ocaml class, the class used*)                        
+(** Create a core plugin in ordre to interpret Ocaml
+    @return the plugin corresponding to Ocaml*)                        
 val make_plg : unit->Core.Miscs.plug
