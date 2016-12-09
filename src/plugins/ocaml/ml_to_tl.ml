@@ -65,7 +65,12 @@ match desc with
                      |Tl_none -> value
                      |_->not_define "Bad ast")) "" constraints in                                  
    Tl_constraint( name, String.trim( value^" "^tmp)) 
-)                                   
+)
+|Ptyp_arrow (_,c_t1,c_t2)->((* print: x->y, c_t1 x and c_t2 y*)
+    match ptyp_to_tl name c_t1, ptyp_to_tl name c_t2 with   
+    |Tl_constraint(_,v1), Tl_constraint(_,v2)->Tl_constraint(name, v1^" -> "^v2)
+    |_,_->not_define "ptyp_to_tl Ptyp_arrow"    
+)                  
 |_-> not_define "Ptyp_* not supported"
 
 let pctf_to_tl {pctf_desc=desc;_}=
@@ -281,15 +286,18 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     |Pstr_recmodule m_list ->(
         Tl_recmodule(List.map (function m->pmod_to_tl m.pmb_name 
              m.pmb_expr.pmod_desc) m_list, body)
-    )   
-    |_ -> Tl_none
+    )
+    |Pstr_primitive {pval_name={txt=name;_};pval_type=c_t;_}->
+        ptyp_to_tl name c_t
+    |Pstr_attribute _->Tl_none      
+    |_ -> not_define "Pstr_* not supported" 
 
 
 (**TODO : faire une nouvelle passe de simplification vers un nouvel ast et ajouter les types**)
 
 
 (*ml is a string containing the whole file from which ast was created *)
-and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
+and ast_to_tl_ast ml ast = (print_ast ast ;List.map (struct_to_tl_struct ml) ast)
     
 (*let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)*)
 

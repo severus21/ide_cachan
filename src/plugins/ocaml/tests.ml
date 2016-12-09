@@ -74,7 +74,10 @@ let test_suites ()=
         inherit dwarf \
         method get_x : int \
         method bump : unit \
-    end" in      
+    end" in 
+
+    let ml_arrow_contraint ="val extract: string -> string list -> int list" in
+
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -188,6 +191,10 @@ let test_suites ()=
                 Tl_type(["t"], "type t = content list ref");
                 Tl_var("comp", "let comp = T.compare")
             ]))
+    ]);
+    ("suite_constraint", [
+        ("arrow", ml_arrow_contraint, Tl_constraint("extract", 
+            "string -> string list -> int list")) 
     ]);
 ]
 
