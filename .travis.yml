@@ -16,3 +16,7 @@ script:
 
 env:
     - OCAML_VERSION=4.04.0
+    
+notifications:
+    email:
+        - stenodyon@gmail.com
