@@ -11,10 +11,10 @@ let () =
     
     Printf.printf "%s" str2;
 
-    let a = apply_rules "/home/severus/Projects" [["ml";"mli"];["ml"];["xml"]] in
+    let a = extract_from_rules "tests/data/plugins/extract/" [["aa";"b"];["b"];["c"]] in
 
          
-affiche a;
+print a;
     (*List.iter(List.iter ( function l-> (Printf.printf "%s\n\n" (String.concat "\n\t" l) ))) ll;*) 
 
 Printf.printf "coucou";
