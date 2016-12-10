@@ -29,10 +29,11 @@ file_extensions:string list list; (**
 	we continue with the tail of the list but we ignore the files already
 	imported (e.g. [["ml";"mli"];["ml"]]) *)
 
-path_to_c_ast:string->c_ast;(**
+path_to_c_ast:string->c_ast * string list;(**
     Construct a c_ast from a file or a directory
     @param path, this is the path dir or the file location
-    @return the c_ast related to path*)
+    @return the c_ast related to path and a list of all files which are not used
+        by the plugin*)
 
 string_to_c_ast:string->c_ast;(**
     Construct a c_ast from file

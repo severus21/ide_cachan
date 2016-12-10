@@ -24,36 +24,40 @@ let scandir path=
 let extract_from_rules path rules=
     let files = scandir path in
     let n = List.length files in
-    let htbl_files = Hashtbl.create n and closed_names = Hashtbl.create n in
+    let htbl_files = Hashtbl.create n and closed_files = Hashtbl.create n in
 
-    let names = (List.map (function filename ->(
-        let name = Filename.remove_extension filename in
-        Hashtbl.replace htbl_files filename true;
-        name;
-    )) files) in
+    List.iter (function filename ->(
+        Hashtbl.replace htbl_files filename true
+    )) files;
     
-    let match_rule rule name=
-        if Hashtbl.mem closed_names name then []
-        else(                                        
+    let match_rule rule filename=
+        if Hashtbl.mem closed_files filename then []
+        else( 
+            let name = Filename.remove_extension filename in
             match (List.filter (function ext-> not (Hashtbl.mem htbl_files (name^"."^ext)) ) rule ) with
             |[]->(
-                Hashtbl.replace closed_names name true; (*Only the top ranked rule which match must be applied in a name*)
-                List.map (function ext-> name^"."^ext) rule
+                (*Only the top ranked rule which match must be applied in a name*)
+                List.map (function ext->(
+                    Hashtbl.replace closed_files (name^"."^ext) true;
+                    name^"."^ext
+                )) rule
             )      
             |_ -> []   ) 
     in
 
-    List.rev (List.fold_left (fun acc0 rule -> (
-        (*Here for a rule [ext1;...;extn] we harvest for all name in names, 
-          [name.ext1;...;name.extn] who exists in files
-          NB :  if a name match a rule it is add to closed_names to ensure that :
-                a name is associated to the top ranked rule he match*)  
-        List.rev (List.fold_left (fun acc1 name -> 
-            match match_rule rule name with 
+    let entries = List.rev (List.fold_left (fun acc0 rule -> (
+        (*Here for a rule [ext1;...;extn] we harvest for all filename such that 
+          [name.ext1;...;name.extn] which exists
+          NB :  if a filename match a rule it is add to closed_files to ensure that :
+                a filename is associated to the top ranked rule he match*)  
+        List.rev (List.fold_left (fun acc1 filename -> 
+            match match_rule rule filename with 
             |[]-> acc1
             | l-> l::acc1 
-        ) [] names)
-    )::acc0) [] rules)
+        ) [] files)
+    )::acc0) [] rules) in
+    
+    entries, List.filter (function filename->not (Hashtbl.mem closed_files filename)) files 
 
 let print=
     List.iter( function r_entries->(
@@ -77,11 +81,12 @@ let tests ()=
             ])
         ));
         "extract_from_rules">::(function _->(assert_equal
-            (extract_from_rules path [["aa";"b"];["b"];["c"]])
+            (extract_from_rules path [["aa";"b"];["b"];["c"]]) 
             ([
                 [List.map location ["a.aa";"a.b"]];
                 [];
                 [[location "b.c"];[location "d1/c.c"];[location "d2/b.c"]];
-            ])
+            ], List.map location ["d1/c.aa"; "d1/d1.1/f.aa"; "d1/d1.1/f.r";
+                "d2/a.aa"])
         ))
     ]
