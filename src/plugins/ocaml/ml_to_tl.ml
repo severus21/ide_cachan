@@ -56,15 +56,15 @@ let compare_lexing_pos (pos1:Lexing.position) pos2=
 let rec ptyp_to_tl name {ptyp_desc=desc;_}=
 match desc with
 |Ptyp_any -> Tl_none    
-|Ptyp_var str->Tl_constraint(name, str)
+|Ptyp_var str->Tl_constraint(name, "'"^str)
 |Ptyp_constr(lg_ident , next)->(
    let constraints = List.map (function x->ptyp_to_tl "" x) next in
-   let tmp = List.fold_left (fun str x->str^x) "" (Longident.flatten lg_ident.txt) in 
+   let tmp = List.fold_left (fun str x->if str <> "" then str^"."^x else x) "" (Longident.flatten lg_ident.txt) in
    let value = List.fold_left (fun (value:string) (tl:tl_struct)->(match tl with 
                      |Tl_constraint(_, v)->value^" "^v
                      |Tl_none -> value
                      |_->not_define "Bad ast")) "" constraints in          
-   
+
    Tl_constraint( name, String.trim( value^" "^tmp)) 
 )
 |Ptyp_arrow (_,c_t1,c_t2)->((* print: x->y, c_t1 x and c_t2 y*)
@@ -318,15 +318,15 @@ let rec class_elmt_to_str head= function
     |Cl_method (m, f_v)->(
         let virtual_str = match f_v with |Tl_private->"private "|_->"" in
          match m with
-        |Tl_fun(name, expr)->    
-            Format.sprintf "%s\t%smethod %s = %s\n" head virtual_str name expr 
+        |Tl_fun(_, expr)->    
+            Format.sprintf "%s\t%smethod %s\n" head virtual_str expr 
         |Tl_constraint(name, expr)->
             Format.sprintf "%s\t%smethod %s : %s\n" head virtual_str name expr
         |_-> not_define "bad tree class_elmt_to_str Cl_method"       
     )
     |Cl_init body-> Format.sprintf "%s\tinitializer %s\n" head body    
-    |Cl_inherit (name,as_str)-> Format.sprintf "%s\tinherit %s %s\n" head name 
-          (match as_str with |None->"" |Some s-> "as "^s)
+    |Cl_inherit (name,as_str)-> Format.sprintf "%s\tinherit %s%s\n" head name 
+          (match as_str with |None->"" |Some s-> " as "^s)
     |_->not_define "baf_tl_ast class_elmt_to_str"                  
 and tl_struct_to_str root =function (* root indicate that the element is a top level or insigne module*) 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
@@ -393,22 +393,19 @@ let tl_ast_to_files tl=
         |_->not_define "tl_ast_to_files"
     ) tl)
 
-(*TODO make file*)
+(*TODO makefile, .mlpack and other data*)
 let write_file path (relative_path, ast)= 
-    Printf.printf "Writing file %s|%s\n" relative_path path;
     let location = Filename.concat path relative_path in
     let dir = Filename.dirname location in
     
     Utility.mkdir dir 0o740;
 
-    let fd = open_out location in            
-    Printf.fprintf fd "%s\n" (tl_ast_to_str ast);
+    let fd = open_out location in  
+    Printf.fprintf fd "%s" (tl_ast_to_str ast);  
     close_out fd
 
 let tl_ast_to_folder path tl_ast=
-    Printf.printf "tl_ast_to_folder %s\n" path;
     let files = tl_ast_to_files tl_ast in
-    Printf.printf "%d %d\n" (List.length tl_ast) (List.length files);  
     List.iter (write_file path) files
 
 let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
@@ -472,6 +469,7 @@ let tests_tl_ast_to_str = [
     ("constant", "let t = 1", "let t = 1\n");
     ("function", "let f x = x", "let f x = x\n");
     ("val", "val x : int", "val x : int\n");
+    ("val with module ref", "val y : M.t -> unit", "val y : M.t -> unit\n");
     ("type", "type 'a tree = Nil | Node of 'a tree * 'a",
             "type 'a tree = Nil | Node of 'a tree * 'a\n");
     ("class", "class hello = object(self) \
@@ -485,9 +483,19 @@ let tests_tl_ast_to_str = [
                     \tval hello:string=\"hello\"\n\
                     \tval alpha = 12\n\
                     \tval arf = ref true\n\
-                    \tmethod set = set (key:string) = 12\n\
+                    \tmethod set (key:string) = 12\n\
                     \tinitializer (arf:=false)\n\
                 end\n");
+    ("class_type", "class type restricted_point_type = object \
+                        inherit dwarf \
+                        method get_x : int \
+                        method bump : unit \
+                    end",
+                    "class type restricted_point_type = object\n\
+                        \tinherit dwarf\n\
+                        \tmethod get_x : int\n\
+                        \tmethod bump : unit\n\
+                    end\n");                                     
     ("module", "module rec Even : sig \
             type t = Zero | Succ of Odd.t \
         end = struct \

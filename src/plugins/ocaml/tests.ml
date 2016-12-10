@@ -50,10 +50,6 @@ let test_suites ()=
     end = struct \
         type t = Succ of Even.t \
     end" in 
-    (*let ml_comparable_s="module type Comparable = sig \
-        type t \
-        val compare : t -> t -> int \
-    end" in*)                               
     let ml_compare_f = "module OrderList (T:Comparable) = struct \
         exception Empty \
         type content = T.t \
@@ -61,7 +57,6 @@ let test_suites ()=
         let comp = T.compare \
     end" in
 
-(*type c_ast = Nil| Node of string * string * string * c_ast list*)
     let ml_ptr_ast_c = "class ptr_ast x: object \
         val p_ast : c_ast ref \
         method ast : c_ast \
@@ -99,7 +94,7 @@ let test_suites ()=
     ("suite_type", [
         ("default", "type 'a tree =Nil |Node of 'a tree * 'a tree * 'a", 
         Tl_type(["tree"],"type 'a tree =Nil |Node of 'a tree * 'a tree * 'a"));
-        ("multi rec", ml_forest_t, Tl_type(["tree";"forest"], ml_forest_t))
+        ("multi rec", ml_forest_t, Tl_type(["tree";"forest"], ml_forest_t));
     ]);
     ("suite_class", [
         ("default", ml_hello_c, 
@@ -196,7 +191,8 @@ let test_suites ()=
         ("arrow", ml_arrow_contraint, Tl_constraint("extract", 
             "string -> string list -> int list"));
         ("tuple", ml_tuple_constraint, Tl_constraint("extract",
-            "string * int"));                 
+            "string * int"));
+        ("polymorphic", "val x : int -> 'a", Tl_constraint("x", "int -> 'a"));
     ]); 
 ]
 
