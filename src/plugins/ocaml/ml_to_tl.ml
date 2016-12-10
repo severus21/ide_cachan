@@ -2,7 +2,7 @@ open Parsetree
 open Asttypes
 
 open Tl_ast
-  
+(* TODO When not_define afficher le nom de la structure non supportée*)  
 (* ** BEGIN Miscellaneous functions** *)
 
 (**Opens a file and returns its ocaml ast*)
@@ -70,7 +70,14 @@ match desc with
     match ptyp_to_tl name c_t1, ptyp_to_tl name c_t2 with   
     |Tl_constraint(_,v1), Tl_constraint(_,v2)->Tl_constraint(name, v1^" -> "^v2)
     |_,_->not_define "ptyp_to_tl Ptyp_arrow"    
-)                  
+)
+|Ptyp_tuple cts->(
+    let constraints = List.map (ptyp_to_tl name) cts in
+    Tl_constraint( name, (List.fold_left (fun v0 ->(function
+        |Tl_constraint(_,v) ->if v0 <> "" then v0^" * "^v else v
+        |_->not_define "ptyp_to_tl Ptyp_tuple")
+    ) "" constraints)) 
+)   
 |_-> not_define "Ptyp_* not supported"
 
 let pctf_to_tl {pctf_desc=desc;_}=
@@ -383,18 +390,21 @@ let tl_ast_to_files tl=
     ) tl)
 
 (*TODO make file*)
-let write_file path (relative_path, ast)=  
+let write_file path (relative_path, ast)= 
+    Printf.printf "Writing file %s|%s\n" relative_path path;
     let location = Filename.concat path relative_path in
     let dir = Filename.dirname location in
     
     Utility.mkdir dir 0o740;
 
-    let fd = open_out (Filename.concat path location) in            
-    Printf.fprintf fd "%s" (tl_ast_to_str ast);
+    let fd = open_out location in            
+    Printf.fprintf fd "%s\n" (tl_ast_to_str ast);
     close_out fd
 
 let tl_ast_to_folder path tl_ast=
+    Printf.printf "tl_ast_to_folder %s\n" path;
     let files = tl_ast_to_files tl_ast in
+    Printf.printf "%d %d\n" (List.length tl_ast) (List.length files);  
     List.iter (write_file path) files
 
 let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)

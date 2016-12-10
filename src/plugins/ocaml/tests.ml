@@ -77,7 +77,7 @@ let test_suites ()=
     end" in 
 
     let ml_arrow_contraint ="val extract: string -> string list -> int list" in
-
+    let ml_tuple_constraint="val extract: string * int" in
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -194,8 +194,10 @@ let test_suites ()=
     ]);
     ("suite_constraint", [
         ("arrow", ml_arrow_contraint, Tl_constraint("extract", 
-            "string -> string list -> int list")) 
-    ]);
+            "string -> string list -> int list"));
+        ("tuple", ml_tuple_constraint, Tl_constraint("extract",
+            "string * int"));                 
+    ]); 
 ]
 
 let test_suite2 ()=
