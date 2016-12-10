@@ -18,7 +18,7 @@ val print_ast : Parsetree.structure_item list -> unit
 
 (** Transform a list of rule's entry to a tl_ast
     @param project_path, the parent dir of the project imported
-    @param (rule's number, entries) where entries are a list of relation
+    @param p as (rule_number, entries) where entries are a list of relation
         a relation is a list of files
     @return the tl_ast related to entries
   *)
