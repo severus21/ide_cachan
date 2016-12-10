@@ -16,9 +16,13 @@ val string_to_ast : string -> Parsetree.structure_item list
     @param ast parstree to print *)
 val print_ast : Parsetree.structure_item list -> unit
 
-(** TODO
+(** Transform a list of rule's entry to a tl_ast
+    @param project_path, the parent dir of the project imported
+    @param (rule's number, entries) where entries are a list of relation
+        a relation is a list of files
+    @return the tl_ast related to entries
   *)
-val entries_to_tl_ast : int * string list list -> tl_ast
+val entries_to_tl_ast : string -> int * string list list -> tl_ast
 
 (** Transform  a string containing some ml code into a tl_ast 
     @param str string representing a piece of caml code
@@ -37,8 +41,15 @@ val str_to_tl_struct: string -> tl_struct
     @return the caml code related to ast*)                                    
 val tl_ast_to_str : tl_ast -> string
 
+
+(** Export a top-level ast into a caml folder
+    @param path of the folder 
+    @param ast a tl_ast, where roots are Tl_module,Tl_sig, and Tl_module_constrainte describing files*)
+val tl_ast_to_folder : string->tl_ast -> unit
+
 (** Prints a tl_ast, for debbuging purposes 
     @param ast a tl_ast*)
 val print_tl_ast : tl_ast -> unit
 
-
+(** Generate unittests for this module*)                               
+val tests : unit -> OUnit2.test

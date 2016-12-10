@@ -269,4 +269,4 @@ let test_suite2 ()=
 
 let test_structs = (make_suites "tl_ast" (test_suites()))
                      
-let tests ()= "Ocaml">::: [test_structs; (test_suite2())]
+let tests ()= "Ocaml">::: [test_structs; (test_suite2()); Ml_to_tl.tests ()]

@@ -1,15 +1,12 @@
 open Factory
-open Utility
 open Extract
 
 let () =
     let plug = make_plg Ocaml in
 
       
-    let str = file_to_string "src/plugins/extract.mli" in
-    let str2 = plug#c_ast_to_str (plug#string_to_c_ast str) in
-    
-    Printf.printf "%s" str2;
+    (*let str = Utility.file_to_string "src/plugins/extract.mli" in*)
+    let _= plug#c_ast_to_folder "trollll" (plug#path_to_c_ast "src/ocaml/")in     
 
     let a = extract_from_rules "tests/data/plugins/extract/" [["aa";"b"];["b"];["c"]] in
 

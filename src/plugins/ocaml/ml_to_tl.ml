@@ -293,9 +293,6 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     |_ -> not_define "Pstr_* not supported" 
 
 
-(**TODO : faire une nouvelle passe de simplification vers un nouvel ast et ajouter les types**)
-
-
 (*ml is a string containing the whole file from which ast was created *)
 and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
     
@@ -371,8 +368,34 @@ and tl_struct_to_str =function
 
 and tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
 
+let name_to_path name= List.fold_left Filename.concat "" (String.split_on_char '@' name)
 
+     (**all roots are files*)                         
+let tl_ast_to_files tl=
+    List.concat (List.map (function
+        |Tl_module(name, ast) -> [(name_to_path name)^".ml", ast] 
+        |Tl_sign(name, ast) -> [(name_to_path name)^".mli", ast]
+        |Tl_module_constraint (name, Tl_module(_, ast0), Tl_sign(_,ast1))->(
+            let path = name_to_path name in 
+            [path^".ml",ast0;path^".mli",ast1]
+        )
+        |_->not_define "tl_ast_to_files"
+    ) tl)
+
+(*TODO make file*)
+let write_file path (relative_path, ast)=  
+    let location = Filename.concat path relative_path in
+    let dir = Filename.dirname location in
     
+    Utility.mkdir dir 0o740;
+
+    let fd = open_out (Filename.concat path location) in            
+    Printf.fprintf fd "%s" (tl_ast_to_str ast);
+    close_out fd
+
+let tl_ast_to_folder path tl_ast=
+    let files = tl_ast_to_files tl_ast in
+    List.iter (write_file path) files
 
 let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
 
@@ -392,29 +415,71 @@ let str_to_tl_struct s = List.hd (str_to_tl_ast s)
 *   @param (rule number, entry)
 * *)                  
 
-let rec path_to_name=function
-|""->"" 
-|path->(
-    let name = Filename.basename path in
-    if String.length name>0 then Bytes.set name 0 (Char.uppercase_ascii name.[0]);  
-   
-    (path_to_name (Filename.dirname path)) ^ name    
-) 
-  
-let entry_to_tl_struct =function(*il faudrait un truc comme un numero de rule*)
+let path_to_name project_path path=
+    let rec _path_to_name path = 
+    if path = "" || path = "." || path = "/" || path = "\\" then ""
+    else( 
+        let name = Filename.basename path and dir = Filename.dirname path in
+          
+        let prefix = (if dir <> path then _path_to_name dir else dir) in
+        if name <> "" then(
+            (if prefix <> "" then prefix^"@" else prefix)^name  
+        )else prefix 
+    ) in
+    assert( not (String.contains path '@'));   
+
+    let len0 = String.length project_path and len1 = String.length path in
+    assert(project_path = (String.sub path 0 len0));  
+    _path_to_name (Filename.remove_extension (String.sub path len0 (len1-len0)))  
+
+    
+
+let entry_to_tl_struct project_path=function(*il faudrait un truc comme un numero de rule*)
 |0,ml::mli::[] ->(
-    let name = path_to_name ml in
-    Tl_module_constraint(name, Tl_module(name, str_to_tl_ast (Utility.file_to_string ml)), 
-                     Tl_sign(name, str_to_tl_ast (Utility.file_to_string mli)))
+    let name = path_to_name project_path ml in
+    Tl_module_constraint(name, 
+        Tl_module(name, str_to_tl_ast (Utility.file_to_string ml)), 
+        Tl_sign(name, str_to_tl_ast (Utility.file_to_string mli)))
  )
 |1,ml::[] ->(
-    let name = path_to_name ml in
-    Tl_module(name, str_to_tl_ast(Utility.file_to_string ml))
+    let name = path_to_name project_path ml and body= str_to_tl_ast(Utility.file_to_string ml) in
+    Tl_module(name,body)
 
- )  
+ ) 
+|n,l when n<3 ->not_define (Printf.sprintf "%d %d" n (List.length l))              
 |_->not_define "rule_to_tl_ast bad rule"   
 
      
-let entries_to_tl_ast (num_rule,entries)=
-    List.map (fun e->entry_to_tl_struct(num_rule,e)) entries    
-                                           (*pathcer scand if ath is a file*)
+let entries_to_tl_ast project_path (num_rule,entries)=
+    List.map (fun e->entry_to_tl_struct project_path (num_rule,e)) entries    
+            
+open OUnit2
+let tests ()=
+    "ml_to_tl">:::[
+        "path_to_name">:::[
+            "default">::(function _->( assert_equal
+                (path_to_name "" "charlie.ml")
+                "charlie"                        
+            ));                            
+            "file">::(function _->( assert_equal
+                (path_to_name "" "alpha/tango/bravo/charlie.ml")
+                "alpha@tango@bravo@charlie"                        
+            ));
+            "dir">::(function _->( assert_equal
+                (path_to_name "" "alpha/tango/bravo/charlie")
+                "alpha@tango@bravo@charlie"                     
+            ));
+            "absolu">::(function _->( assert_equal
+                (path_to_name "" "/alpha/tango/bravo/charlie")
+                "alpha@tango@bravo@charlie"
+            ));
+            "project">::(function _->( assert_equal
+                (path_to_name "/alpha/tango" "/alpha/tango/bravo/charlie")
+                "bravo@charlie"
+            ));
+            "project_files">::(function _->( assert_equal
+                (path_to_name "alpha/tango/charlie.ml" "alpha/tango/charlie.ml")
+                ""
+            ));                                   
+        ]
+    ]
