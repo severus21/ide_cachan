@@ -57,13 +57,14 @@ let rec ptyp_to_tl name {ptyp_desc=desc;_}=
 match desc with
 |Ptyp_any -> Tl_none    
 |Ptyp_var str->Tl_constraint(name, str)
-|Ptyp_constr(lg_ident , next)->( 
+|Ptyp_constr(lg_ident , next)->(
    let constraints = List.map (function x->ptyp_to_tl "" x) next in
    let tmp = List.fold_left (fun str x->str^x) "" (Longident.flatten lg_ident.txt) in 
    let value = List.fold_left (fun (value:string) (tl:tl_struct)->(match tl with 
                      |Tl_constraint(_, v)->value^" "^v
                      |Tl_none -> value
-                     |_->not_define "Bad ast")) "" constraints in                                  
+                     |_->not_define "Bad ast")) "" constraints in          
+   
    Tl_constraint( name, String.trim( value^" "^tmp)) 
 )
 |Ptyp_arrow (_,c_t1,c_t2)->((* print: x->y, c_t1 x and c_t2 y*)
@@ -310,10 +311,10 @@ and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
   
 (* ***BEGIN Printing of a tl_ast*)
 let rec class_elmt_to_str head= function
-    |Cl_attribut Tl_var(name, value) ->
-        Format.sprintf "%s\tval %s = %s\n" head name value 
-    |Cl_attribut Tl_constraint(name, value)->
-        Format.sprintf "%s\tval %s : %s\n" head name value
+    |Cl_attribut Tl_var(_, value) ->
+        Format.sprintf "%s\tval %s\n" head value 
+    |Cl_attribut Tl_constraint(_, value)->
+        Format.sprintf "%s\tval %s\n" head value
     |Cl_method (m, f_v)->(
         let virtual_str = match f_v with |Tl_private->"private "|_->"" in
          match m with
@@ -323,14 +324,17 @@ let rec class_elmt_to_str head= function
             Format.sprintf "%s\t%smethod %s : %s\n" head virtual_str name expr
         |_-> not_define "bad tree class_elmt_to_str Cl_method"       
     )
-    |Cl_init body-> Format.sprintf "%s\tinitializer %s" head body    
+    |Cl_init body-> Format.sprintf "%s\tinitializer %s\n" head body    
     |Cl_inherit (name,as_str)-> Format.sprintf "%s\tinherit %s %s\n" head name 
           (match as_str with |None->"" |Some s-> "as "^s)
     |_->not_define "baf_tl_ast class_elmt_to_str"                  
-and tl_struct_to_str =function 
+and tl_struct_to_str root =function (* root indicate that the element is a top level or insigne module*) 
     |Tl_open(_,s)-> Format.sprintf "%s\n" s
     |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
-    |Tl_constraint(_, expr)->Format.sprintf "%s\n" expr
+    |Tl_constraint(name, expr)->(
+        if root then Format.sprintf "val %s : %s\n" name expr
+        else Format.sprintf "%s\n" expr
+    )           
     |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
     |Tl_exception(_, values)->Format.sprintf "%s\n" values    
     |Tl_type(_, value)->Format.sprintf "%s\n" value
@@ -339,16 +343,16 @@ and tl_struct_to_str =function
     |Tl_module_constraint(name, Tl_module(_,m), Tl_sign(_,mt))->(
         Format.sprintf "module %s : sig\n\
           %s\
-          end = struct \n\
+          end = struct\n\
           %s\
           end\n" name (tl_ast_to_str mt) (tl_ast_to_str m)      
     )
     |Tl_recmodule(modules,_)->(
        let str = (List.fold_left (fun str x->(
-            let _str = tl_struct_to_str x in
+            let _str = tl_struct_to_str true x in
             let tmp = String.sub _str 7 (String.length _str -7) in (*removed module*)                 
-            str^tmp^" and " 
-        )) "module " modules) in
+            str^tmp^"and " 
+        )) "module rec " modules) in
 
         String.sub str 0 (String.length str- 4)   
     )   
@@ -369,11 +373,11 @@ and tl_struct_to_str =function
                 c_elmts_str self_str elmts_str         
        )        
     )
-    |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s\n%s" head  (tl_struct_to_str cl)) "" cls 
+    |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s%s" head  (tl_struct_to_str false cl)) "" cls 
     |Tl_none -> ""
     |_->failwith "Bad tree"               
 
-and tl_ast_to_str tl = String.concat "" (List.map tl_struct_to_str tl)
+and tl_ast_to_str tl = String.concat "" (List.map (tl_struct_to_str true) tl)
 
 let name_to_path name= List.fold_left Filename.concat "" (String.split_on_char '@' name)
 
@@ -464,6 +468,46 @@ let entries_to_tl_ast project_path (num_rule,entries)=
     List.map (fun e->entry_to_tl_struct project_path (num_rule,e)) entries    
             
 open OUnit2
+let tests_tl_ast_to_str = [
+    ("constant", "let t = 1", "let t = 1\n");
+    ("function", "let f x = x", "let f x = x\n");
+    ("val", "val x : int", "val x : int\n");
+    ("type", "type 'a tree = Nil | Node of 'a tree * 'a",
+            "type 'a tree = Nil | Node of 'a tree * 'a\n");
+    ("class", "class hello = object(self) \
+                    val hello:string=\"hello\" \
+                    val alpha = 12 \
+                    val arf = ref true \
+                    method set (key:string) = 12 \
+                    initializer(arf:=false) \
+                end",
+                "class hello = object(self)\n\
+                    \tval hello:string=\"hello\"\n\
+                    \tval alpha = 12\n\
+                    \tval arf = ref true\n\
+                    \tmethod set = set (key:string) = 12\n\
+                    \tinitializer (arf:=false)\n\
+                end\n");
+    ("module", "module rec Even : sig \
+            type t = Zero | Succ of Odd.t \
+        end = struct \
+            type t = Zero | Succ of Odd.t \
+        end \
+        and Odd : sig \
+            type t = Succ of Even.t \
+        end = struct \
+            type t = Succ of Even.t \
+        end", "module rec Even : sig\n\
+            type t = Zero | Succ of Odd.t\n\
+            end = struct\n\
+            type t = Zero | Succ of Odd.t\n\
+            end\n\
+            and Odd : sig\n\
+            type t = Succ of Even.t\n\
+            end = struct\n\
+            type t = Succ of Even.t\n\
+            end\n");
+] 
 let tests ()=
     "ml_to_tl">:::[
         "path_to_name">:::[
@@ -491,5 +535,12 @@ let tests ()=
                 (path_to_name "alpha/tango/charlie.ml" "alpha/tango/charlie.ml")
                 ""
             ));                                   
+        ];
+        "tl_ast_to_str">:::( List.map (function name, input, output->
+            name>::(function _->(
+                assert_equal (tl_ast_to_str (str_to_tl_ast input)) output
+                (*assert_equal (let t=(tl_ast_to_str (str_to_tl_ast input)) in Printf.printf "#%s#\n" t;t) (let t=output in Printf.printf "@%s@\n" t;t)*)
+            ))      
+        ) tests_tl_ast_to_str)
+
         ]
-    ]

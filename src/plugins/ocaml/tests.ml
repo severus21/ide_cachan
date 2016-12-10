@@ -262,7 +262,9 @@ let test_suite2 ()=
         end = object \
             val p_ast = ref Nil \
             method ast = Nil \
-        end");   
+        end");
+
+        ("top-level constraint", "val troll : int -> int");
     ] in
     "export/import to c_ast" >:::(List.map (function name,body->(
         let tl_ast = str_to_tl_ast body in
