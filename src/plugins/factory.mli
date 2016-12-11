@@ -7,4 +7,4 @@ type language = (*TODO add version indication?*)
 (** Create a core plugin in order to interpret a specific language
     @param the program language needed
     @return the plugin corresponding to the language *)
-val make_plg : language -> Core.Miscs.plug   
+val make_plg : language -> Plugin.plug   

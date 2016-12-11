@@ -6,8 +6,8 @@ First Plugins will only export two sub-modules :
 
 ### API exported by API
 * Programming languages supported : ```type language```
-* ̀A function to make a Core.Misc.plug from a supported language
-```     val make_plg : language -> Core.Mics.plug``` 
+* ̀A function to make a Plugin.plug from a supported language
+```     val make_plg : language -> Plugin.plug``` 
 
 ## Adding a new plugin for alpha language
 
@@ -38,7 +38,7 @@ In file : src/plugins/alpha/frontend.mli
                                          
 (** Create a core plugin in ordre to interpret Alpha 
     @return the plugin corresponding to Alpha*)                        
-    val make_plg : unit->Core.Miscs.plug
+    val make_plg : unit->Plugin.plug
 ```
 
 and make the ml file related

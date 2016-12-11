@@ -1,10 +1,7 @@
-open Factory
+open Core.Miscs
 
-let () =
-    let plug = make_plg Ocaml in
+type plug = <file_extensions:string list list; 
+path_to_c_ast:string->c_ast * string list;
+string_to_c_ast:string->c_ast;
+c_ast_to_folder:string->c_ast->unit>
 
-      
-    (*let str = Utility.file_to_string "src/plugins/extract.mli" in*)
-    let _= plug#c_ast_to_folder "trollll" (let t,_=plug#path_to_c_ast "src/plugins/ocaml/"in t) in     
-    ()
- 
