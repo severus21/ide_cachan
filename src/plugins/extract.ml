@@ -68,7 +68,7 @@ let print=
     )) 
 
 open OUnit2
-let tests ()= 
+let unittests ()= 
     let path = "tests/data/plugins/extract/" in
     let location = function x->path^x in
 

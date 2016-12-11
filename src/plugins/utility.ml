@@ -7,9 +7,6 @@ let enumerate l=
     List.map (function x-> incr i; !i,x) l
 
 let rec mkdir dir _mod=
-    Printf.printf "|%s|\n" dir;
-     
-    
     let flag =(
         try 
             not (Sys.is_directory dir)

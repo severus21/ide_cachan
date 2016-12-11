@@ -1,7 +1,7 @@
 (** Define generic API over plugins*)
 
 (** List all languages supported by the plugins*)
-type language = 
+type language = (*TODO add version indication?*)
 |Ocaml    
 
 (** Create a core plugin in order to interpret a specific language

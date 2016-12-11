@@ -516,7 +516,7 @@ let tests_tl_ast_to_str = [
             type t = Succ of Even.t\n\
             end\n");
 ] 
-let tests ()=
+let unittests ()=
     "ml_to_tl">:::[
         "path_to_name">:::[
             "default">::(function _->( assert_equal

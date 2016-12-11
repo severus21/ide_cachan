@@ -1,4 +1,13 @@
 # Plugin documentation
+## Plugins API
+First Plugins will only export two sub-modules :
+1. Factory : export API
+2. Tests : export all tests functions
+
+### API exported by API
+* Programming languages supported : ```type language```
+* ̀A function to make a Core.Misc.plug from a supported language
+```     val make_plg : language -> Core.Mics.plug``` 
 
 ## Adding a new plugin for alpha language
 
@@ -9,7 +18,7 @@ alpha/Tests
 ```
 
 ### src/plugins/tests.ml
-add ``̀`Alpha.Tests.tests (); ``` into tests' list
+add ``̀`Alpha.Tests.unittests (); ``` into unittests' list
 
 ### src/plugins/factory.ml
 1. add ```Alpha``` to language( add it into factory.mli too)
@@ -38,15 +47,15 @@ and make the ml file related
 In file : src/plugins/alpha/tests.mli
 
 ```
-(** Aggregate all the unitests of the Alpha plugin*)
-val tests : unit -> OUnit2.test
+(** Aggregate all the unittests of the Alpha plugin*)
+val unittests : unit -> OUnit2.test
 ```
 
 and make the ml file related
 
 ### Advices for Alpha submodules
 Each of them should export one :
-```val tests : unit -> OUnit2.test```
+```val unittests : unit -> OUnit2.test```
 
 which will be aggregated in the Alpha.Tests implementation
 

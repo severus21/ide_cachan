@@ -52,4 +52,4 @@ val tl_ast_to_folder : string->tl_ast -> unit
 val print_tl_ast : tl_ast -> unit
 
 (** Generate unittests for this module*)                               
-val tests : unit -> OUnit2.test
+val unittests : unit -> OUnit2.test

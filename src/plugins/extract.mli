@@ -22,6 +22,6 @@ val extract_from_rules : string -> string list list -> string list list list * s
 val print : string list list list -> unit 
 
 (** Generate unittests for this module*)                                       
-val tests : unit -> OUnit2.test                                       
+val unittests : unit -> OUnit2.test                                       
 
                                        
