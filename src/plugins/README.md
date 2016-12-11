@@ -24,14 +24,13 @@ mkdir src/plugins/alpha
 
 #### Alpha.Frontend module
 In file : src/plugins/alpha/frontend.mli
-
-``̀`
+```
 (** Export the Alpha plugin API *)
                                          
 (** Create a core plugin in ordre to interpret Alpha 
     @return the plugin corresponding to Alpha*)                        
     val make_plg : unit->Core.Miscs.plug
-``̀ 
+```
 
 and make the ml file related
 
@@ -47,10 +46,9 @@ and make the ml file related
 
 ### Advices for Alpha submodules
 Each of them should export one :
-`̀ ̀ 
-val tests : unit -> OUnit2.test
-```
+```val tests : unit -> OUnit2.test```
+
 which will be aggregated in the Alpha.Tests implementation
 
 ## TODO
-* Some automation script to generate new plugin structure
+* Some automatic script to generate new plugin
