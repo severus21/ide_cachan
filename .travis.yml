@@ -20,3 +20,4 @@ env:
 notifications:
     email:
         - stenodyon@gmail.com
+        - laurent.prosperi@ens-cachan.fr  
