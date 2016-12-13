@@ -3,7 +3,7 @@ SOURCE_DIR=src/
 
 PACKAGES=-package lablgtk2 -package oUnit -package compiler-libs.common
 LIBS=-lib dynlink
-BUILD=ocamlbuild -r \
+BUILD=ocamlbuild -no-hygiene -r \
 	  -build-dir "$(BUILD_DIR)" \
 	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47-48@49..59" \
 	  $(PACKAGES) $(LIBS)
@@ -14,12 +14,12 @@ DOC_DIR=ide.docdir
 
 default: debug
 
-debug: clean
+debug:
 	@rm -f ide.debug
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)/src/ide.native ide.debug
 
-test: clean
+test:
 	@rm -f test.debug
 	$(BUILD) tests/test.native
 	@ln -s $(BUILD_DIR)/tests/test.native test.debug
@@ -27,19 +27,17 @@ test: clean
 runtests: test
 	./test.debug -no-cache-filename -output-file test_logs.log
 
-plugins: clean debug
+plugins: debug
 	cd plugins && make clean && make
 
-release: clean
+release:
 	@rm -f ide.release
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)src/ide.native ide.release
 
-doc: clean
-	ocamlbuild -use-ocamlfind $(PACKAGES) $(DOC_DIR)/index.html
-	make debug
+doc: debug
+	ocamlbuild -use-ocamlfind -no-hygiene $(PACKAGES) $(DOC_DIR)/index.html
 	cd plugins && make doc
-	make clean
 
 clean:
 	@rm -rf debug/

@@ -1,18 +1,34 @@
+
+# LaTeX related files
 *.aux
 *.dvi
 *.log
 *.pdf
 *.ps
-*.tex
+
+# Build and doc directories
 debug/
 release/
+_build/
+plugins/*/doc
+
+# Binaries
 *.debug
 *.release
+
 *~
-*.cm*
+
+# Compilation byproducts
+*.cmi
+*.cmo
+*.cmx
+*.cmxs
 *.o
+*.a
+.depend
+
+# Misc
 *.cfg
 oUnit*
 ide.docdir
-_build/
 love
