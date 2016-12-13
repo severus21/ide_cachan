@@ -10,7 +10,7 @@ BUILD=ocamlfind ocamlopt $(PACKAGES) \
 	  $(INCLUDES) -g dynlink.cmxa unix.cmxa -c $< -o $@
 
 plugin.cmxs: $(CMIS) $(CMXS)
-	ocamlfind ocamlopt $(PACKAGES) -linkpkg $(INCLUDES) -g \
+	ocamlfind ocamlopt $(PACKAGES) -linkpkg $(INCLUDES) -g -shared \
 		dynlink.cmxa core.cmx extract.cmx factory.cmx \
 		$(CMXS) -o plugin.cmxs
 

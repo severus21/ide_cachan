@@ -1,13 +1,13 @@
 
 DIRS=$(shell ls -d */)
-PLUGINS=$(addsuffix plugin.cmxa,$(DIRS))
+PLUGINS=$(addsuffix plugin.cmxs,$(DIRS))
 
 default: $(PLUGINS)
 
-%/plugin.cmxa:
+%/plugin.cmxs:
 	cd $* && make
 	-rm $*.cmxs
-	ln -s $@ $*.cmxs
+	cp $@ $*.cmxs
 
 clean_%:
 	cd $* && make clean
