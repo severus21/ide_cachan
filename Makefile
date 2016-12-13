@@ -19,12 +19,12 @@ debug: clean
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)/src/ide.native ide.debug
 
-test : clean
+test: clean
 	@rm -f test.debug
 	$(BUILD) tests/test.native
 	@ln -s $(BUILD_DIR)/tests/test.native test.debug
 
-runtests : test
+runtests: test
 	./test.debug -no-cache-filename -output-file test_logs.log
 
 plugins: clean debug
@@ -35,9 +35,11 @@ release: clean
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)src/ide.native ide.release
 
-doc :clean
+doc: clean
 	ocamlbuild -use-ocamlfind $(PACKAGES) $(DOC_DIR)/index.html
-
+	make debug
+	cd plugins && make doc
+	make clean
 
 clean:
 	@rm -rf debug/

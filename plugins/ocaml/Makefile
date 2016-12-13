@@ -22,6 +22,12 @@ clean:
 	-rm *.cmx *.cmi
 	-rm plugin.cmxs
 
+.PHONY: doc
+
+doc: plugin.cmxs
+	-mkdir doc
+	ocamlfind ocamldoc $(PACKAGES) $(INCLUDES) -html -d doc/ *.mli
+
 %.cmi: %.mli
 	$(BUILD)
 

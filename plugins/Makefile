@@ -14,3 +14,8 @@ clean_%:
 
 clean: $(addprefix clean_,$(DIRS))
 	-rm *.cmxs
+
+doc_%:
+	cd $* && make doc
+
+doc: $(addprefix doc_,$(DIRS))

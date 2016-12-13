@@ -1,9 +1,4 @@
 src/plugins/Factory
-src/plugins/ocaml/Frontend
-src/plugins/ocaml/Tl_ast
-src/plugins/ocaml/Ml_to_tl
-src/plugins/ocaml/Tl_to_c
-src/plugins/ocaml/Tests
 
 src/core/Gset
 src/core/Miscs

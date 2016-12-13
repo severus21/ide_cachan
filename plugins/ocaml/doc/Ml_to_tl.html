@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Tl_ast.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Ml_to_tl" rel="Chapter" href="Ml_to_tl.html">
+<link title="Tl_ast" rel="Chapter" href="Tl_ast.html">
+<link title="Tl_to_c" rel="Chapter" href="Tl_to_c.html">
+<link title="Utility" rel="Chapter" href="Utility.html"><title>Ml_to_tl</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Tl_ast.html" title="Tl_ast">Next</a>
+</div>
+<h1>Module <a href="type_Ml_to_tl.html">Ml_to_tl</a></h1>
+
+<pre><span class="keyword">module</span> Ml_to_tl: <code class="code">sig</code> <a href="Ml_to_tl.html">..</a> <code class="code">end</code></pre><div class="info module top">
+This module contains functions to import/export tl_ast from/to caml ast<br>
+</div>
+<hr width="100%">
+
+<pre><span id="VALfile_to_ast"><span class="keyword">val</span> file_to_ast</span> : <code class="type">string -> Parsetree.structure_item list</code></pre><div class="info ">
+Opens a file and returns its ocaml ast<br>
+<b>Returns</b> caml ast<br>
+</div>
+
+<pre><span id="VALstring_to_ast"><span class="keyword">val</span> string_to_ast</span> : <code class="type">string -> Parsetree.structure_item list</code></pre><div class="info ">
+Transform a string containing some ml code into a caml ast<br>
+<b>Returns</b> the caml ast related to str<br>
+</div>
+
+<pre><span id="VALprint_ast"><span class="keyword">val</span> print_ast</span> : <code class="type">Parsetree.structure_item list -> unit</code></pre><div class="info ">
+Prints a parsetree<br>
+</div>
+
+<pre><span id="VALentries_to_tl_ast"><span class="keyword">val</span> entries_to_tl_ast</span> : <code class="type">string -> int * string list list -> <a href="Tl_ast.html#TYPEtl_ast">Tl_ast.tl_ast</a></code></pre><div class="info ">
+Transform a list of rule's entry to a tl_ast<br>
+<b>Returns</b> the tl_ast related to entries<br>
+</div>
+
+<pre><span id="VALstr_to_tl_ast"><span class="keyword">val</span> str_to_tl_ast</span> : <code class="type">string -> <a href="Tl_ast.html#TYPEtl_ast">Tl_ast.tl_ast</a></code></pre><div class="info ">
+Transform  a string containing some ml code into a tl_ast<br>
+<b>Returns</b> the tl_ast related to str<br>
+</div>
+
+<pre><span id="VALstr_to_tl_struct"><span class="keyword">val</span> str_to_tl_struct</span> : <code class="type">string -> <a href="Tl_ast.html#TYPEtl_struct">Tl_ast.tl_struct</a></code></pre><div class="info ">
+Transform  a string containing some ml code into a tl_struct,
+    used mainly for testing<br>
+<b>Returns</b> the first tl_structure of the tl_ast related to str<br>
+</div>
+
+<pre><span id="VALtl_ast_to_str"><span class="keyword">val</span> tl_ast_to_str</span> : <code class="type"><a href="Tl_ast.html#TYPEtl_ast">Tl_ast.tl_ast</a> -> string</code></pre><div class="info ">
+Converts a top-level ast to a string<br>
+<b>Returns</b> the caml code related to ast<br>
+</div>
+
+<pre><span id="VALtl_ast_to_folder"><span class="keyword">val</span> tl_ast_to_folder</span> : <code class="type">string -> <a href="Tl_ast.html#TYPEtl_ast">Tl_ast.tl_ast</a> -> unit</code></pre><div class="info ">
+Export a top-level ast into a caml folder<br>
+</div>
+
+<pre><span id="VALprint_tl_ast"><span class="keyword">val</span> print_tl_ast</span> : <code class="type"><a href="Tl_ast.html#TYPEtl_ast">Tl_ast.tl_ast</a> -> unit</code></pre><div class="info ">
+Prints a tl_ast, for debbuging purposes<br>
+</div>
+</body></html>
