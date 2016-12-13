@@ -34,7 +34,9 @@ doc: plugin.cmxs
 %.cmx: %.ml
 	$(BUILD)
 
-depend:
+depend: .depend
+
+.depend:
 	ocamldep -native *.mli *.ml > .depend
 
 include .depend
