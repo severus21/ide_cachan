@@ -1,0 +1,9 @@
+frontend.cmx : utility.cmx tl_to_c.cmx ml_to_tl.cmx
+ml_to_tl.cmx : utility.cmx tl_ast.cmx ml_to_tl.cmi
+ml_to_tl.cmi : tl_ast.cmi
+tl_ast.cmx : tl_ast.cmi
+tl_ast.cmi :
+tl_to_c.cmx : tl_ast.cmx tl_to_c.cmi
+tl_to_c.cmi : tl_ast.cmi
+utility.cmx : utility.cmi
+utility.cmi :

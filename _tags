@@ -1,4 +1,5 @@
 <src> or <tests>: include
+<plugins>: -traverse
 <*.ml> : annot
 "src/plugins":include
 <src/plugins/*.cmx>: for-pack(Plugins)

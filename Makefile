@@ -12,8 +12,9 @@ BUILD_DIR=debug/
 
 DOC_DIR=ide.docdir
 
+default: debug
 
-default: clean
+debug: clean
 	@rm -f ide.debug
 	$(BUILD) src/ide.native
 	@ln -s $(BUILD_DIR)/src/ide.native ide.debug
@@ -26,10 +27,8 @@ test : clean
 runtests : test
 	./test.debug -no-cache-filename -output-file test_logs.log
 
-plugins: clean
-	@rm -f plg_main.debug
-	$(BUILD) src/plugins/plg_main.native
-	@ln -s $(BUILD_DIR)/src/plugins/plg_main.native plg_main.debug
+plugins: clean debug
+	cd plugins && make clean && make
 
 release: clean
 	@rm -f ide.release

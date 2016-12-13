@@ -1,10 +1,11 @@
-(** Define generic API over plugins*)
 
-(** List all languages supported by the plugins*)
-type language = (*TODO add version indication?*)
-|Ocaml    
+(** Used by plugins to register themselves
+    @param the plug reprensenting the plugin to register *)
+val register_plugin : Plugin.plug -> unit
 
-(** Create a core plugin in order to interpret a specific language
-    @param the program language needed
-    @return the plugin corresponding to the language *)
-val make_plg : language -> Plugin.plug   
+(** Returns the list of currently loaded plugins
+    @return the list of loaded plugins *)
+val get_plugins : unit -> Plugin.plug list
+
+(** Searches for plugins and load them dynamically *)
+val load_plugins : unit -> unit

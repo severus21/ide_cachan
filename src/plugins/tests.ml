@@ -1,6 +1,5 @@
 open OUnit2
 
-let unittests ()= "Plugins">:::[
+let unittests ()= "plugin_system">:::[
     Extract.unittests ();
-    Ocaml.Tests.unittests ();
 ]
