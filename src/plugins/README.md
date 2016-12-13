@@ -4,60 +4,27 @@ First Plugins will only export two sub-modules :
 1. Factory : export API
 2. Tests : export all tests functions
 
-### API exported by API
-* Programming languages supported : ```type language```
-* ̀A function to make a Plugin.plug from a supported language
-```     val make_plg : language -> Plugin.plug``` 
+### API exported (in module Factory)
+* ```register_plugin : Plugin.plug -> unit``` used by plugins to register themselves
+* ```load_plugins : unit -> unit``` loads plugins from the hardcoded folder in ```factory.ml```
+* ```get_plugins : unit -> Plugin.plug list``` returns the list of currently loaded plugins
 
 ## Adding a new plugin for alpha language
 
-### src/plugins/alpha.mlpack
-```
-alpha/Frontend
-alpha/Tests
-```
+### plugins/alpha
 
-### src/plugins/tests.ml
-add ``̀`Alpha.Tests.unittests (); ``` into unittests' list
-
-### src/plugins/factory.ml
-1. add ```Alpha``` to language( add it into factory.mli too)
-2. add ```Alpha->Alpha.Frontend.make_plg ()``` into make_plg
-
-### Alpha module
-Where plugin's sources files live
-
-```
-mkdir src/plugins/alpha
+This folder contains all the code for the plugin except for modules from the IDE such as Factory or Core.
+At least one of the source files should contain
+```ocaml
+let () =
+  Factory.register_plugin yourplugin
+;;
 ```
 
-#### Alpha.Frontend module
-In file : src/plugins/alpha/frontend.mli
-```
-(** Export the Alpha plugin API *)
-                                         
-(** Create a core plugin in ordre to interpret Alpha 
-    @return the plugin corresponding to Alpha*)                        
-    val make_plg : unit->Plugin.plug
-```
+#### Makefile : long version
+You will need a makefile with ```default```, ```clean``` and ```doc``` targets that output a
+```plugin.cmxa``` file (with ```-shared``` passed to ```ocamlopt```).
+#### TL;DR : copy Makefile from the ocaml plugin, should work as-is
 
-and make the ml file related
-
-### Alpha.Tests module
-In file : src/plugins/alpha/tests.mli
-
-```
-(** Aggregate all the unittests of the Alpha plugin*)
-val unittests : unit -> OUnit2.test
-```
-
-and make the ml file related
-
-### Advices for Alpha submodules
-Each of them should export one :
-```val unittests : unit -> OUnit2.test```
-
-which will be aggregated in the Alpha.Tests implementation
-
-## TODO
-* Some automatic script to generate new plugin
+## Adding tests for alpha language /!\ Plugin tests not integrated yet /!\
+TODO
