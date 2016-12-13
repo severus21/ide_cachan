@@ -18,6 +18,7 @@ let confirm_quit () =
     | _ -> false
 ;;
 
+
 let main () =
     let window = GWindow.window ~resizable:true ~width:1280 ~height:720
                                     ~title:"Awesome Ocaml IDE"
@@ -29,6 +30,23 @@ let main () =
     );
     ignore (window#connect#destroy ~callback: Main.quit);
 
+    (* Import callback *)
+    let import_callback () : unit =
+        let file_chooser =
+            GWindow.file_chooser_dialog ~parent:window
+                                        ~action:`SELECT_FOLDER
+                                        ~show:true () in
+        file_chooser#add_select_button "Open" `CLOSE;
+        let _import () : unit =
+            let path = match file_chooser#filename with
+            | Some p -> p
+            | None -> "No file"
+            in
+            Printf.printf "%s\n" path
+        in
+        ignore(file_chooser#connect#file_activated _import);
+    in
+
     (* Menu bar *)
     let menubar = GMenu.menu_bar ~packing:vbox#pack () in
     let factory = new GMenu.factory menubar in
@@ -38,7 +56,7 @@ let main () =
 
     (* File menu *)
     let factory = new GMenu.factory file_menu ~accel_group in
-    ignore(factory#add_item "Import" ~key:_I ~callback: notimp_callback);
+    ignore(factory#add_item "Import" ~key:_I ~callback: import_callback);
     ignore(factory#add_item "Export" ~key:_E ~callback: notimp_callback);
     ignore(factory#add_item "Quit" ~key:_Q
         ~callback: (fun () -> if confirm_quit () then Main.quit ()));
