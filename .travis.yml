@@ -12,12 +12,13 @@ script:
     - eval `opam config env` && make runtests
     - eval `opam config env` && make doc
     - eval `opam config env` && make default
+    - eval `opam config env` && make plugins
     - make clean
 
 env:
     - OCAML_VERSION=4.04.0
-    
+
 notifications:
     email:
         - stenodyon@gmail.com
-        - laurent.prosperi@ens-cachan.fr  
+        - laurent.prosperi@ens-cachan.fr
