@@ -1,5 +1,7 @@
 class plg_ocaml=object(self)
 
+    method name = "OCaml"
+
     method file_extensions = [
         ["ml";"mli"];
         ["ml"]
