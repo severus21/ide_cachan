@@ -16,3 +16,8 @@ script:
 
 env:
     - OCAML_VERSION=4.04.0
+    
+notifications:
+    email:
+        - stenodyon@gmail.com
+        - laurent.prosperi@ens-cachan.fr  

@@ -1,8 +1,7 @@
 open Gset
 
 (** Define an abstract representation of a file
-  - name of structure, header of structure, code of structure, and children 
-* *)
+  - name of structure, header of structure, code of structure, and children*) 
 type c_node = 
 |Nil
 |Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset tags}

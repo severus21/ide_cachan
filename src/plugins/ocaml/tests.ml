@@ -6,7 +6,7 @@ open Tl_to_c
 
 let make_suite name suite =
     name >::: (List.map( function (name,ml,tl_struct)->
-        name>::function _-> assert_equal (quick_tl_struct ml) tl_struct
+        name>::function _-> assert_equal (str_to_tl_struct ml) tl_struct
     ) suite)
 
 let make_suites name suites =
@@ -50,10 +50,6 @@ let test_suites ()=
     end = struct \
         type t = Succ of Even.t \
     end" in 
-    (*let ml_comparable_s="module type Comparable = sig \
-        type t \
-        val compare : t -> t -> int \
-    end" in*)                               
     let ml_compare_f = "module OrderList (T:Comparable) = struct \
         exception Empty \
         type content = T.t \
@@ -61,7 +57,6 @@ let test_suites ()=
         let comp = T.compare \
     end" in
 
-(*type c_ast = Nil| Node of string * string * string * c_ast list*)
     let ml_ptr_ast_c = "class ptr_ast x: object \
         val p_ast : c_ast ref \
         method ast : c_ast \
@@ -74,7 +69,10 @@ let test_suites ()=
         inherit dwarf \
         method get_x : int \
         method bump : unit \
-    end" in      
+    end" in 
+
+    let ml_arrow_contraint ="val extract: string -> string list -> int list" in
+    let ml_tuple_constraint="val extract: string * int" in
 [ 
     ("suite_open", [
         ("default", "open A.B", Tl_open(["A";"B"],"open A.B"))
@@ -96,7 +94,7 @@ let test_suites ()=
     ("suite_type", [
         ("default", "type 'a tree =Nil |Node of 'a tree * 'a tree * 'a", 
         Tl_type(["tree"],"type 'a tree =Nil |Node of 'a tree * 'a tree * 'a"));
-        ("multi rec", ml_forest_t, Tl_type(["tree";"forest"], ml_forest_t))
+        ("multi rec", ml_forest_t, Tl_type(["tree";"forest"], ml_forest_t));
     ]);
     ("suite_class", [
         ("default", ml_hello_c, 
@@ -189,6 +187,13 @@ let test_suites ()=
                 Tl_var("comp", "let comp = T.compare")
             ]))
     ]);
+    ("suite_constraint", [
+        ("arrow", ml_arrow_contraint, Tl_constraint("extract", 
+            "string -> string list -> int list"));
+        ("tuple", ml_tuple_constraint, Tl_constraint("extract",
+            "string * int"));
+        ("polymorphic", "val x : int -> 'a", Tl_constraint("x", "int -> 'a"));
+    ]); 
 ]
 
 let test_suite2 ()=
@@ -253,13 +258,15 @@ let test_suite2 ()=
         end = object \
             val p_ast = ref Nil \
             method ast = Nil \
-        end");   
+        end");
+
+        ("top-level constraint", "val troll : int -> int");
     ] in
     "export/import to c_ast" >:::(List.map (function name,body->(
-        let tl_ast = quick_tl_ast body in
-        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_core "" tl_ast))
+        let tl_ast = str_to_tl_ast body in
+        name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast (tl_ast_to_c_ast tl_ast))
     )) bodies)                         
 
 let test_structs = (make_suites "tl_ast" (test_suites()))
                      
-let unit_tests () = "">::: [test_structs; (test_suite2())]
+let unittests ()= "Ocaml">::: [test_structs; (test_suite2()); Ml_to_tl.unittests ()]

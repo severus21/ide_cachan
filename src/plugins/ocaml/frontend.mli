@@ -1,3 +1,5 @@
-val string_to_c_ast : string-> string -> Core.Miscs.c_ast
-
-val c_ast_to_str : Core.Miscs.c_ast -> string 
+(** Export the Ocaml plugin API *)
+                                         
+(** Create a core plugin in ordre to interpret Ocaml
+    @return the plugin corresponding to Ocaml*)                        
+val make_plg : unit->Plugin.plug

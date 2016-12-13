@@ -21,3 +21,7 @@ mkdir D1/../Dn/subdir
 echo "Dn/Subdir" >> D1/../Dn.mlpack
 echo "<D1/../Dn/subdir/*.cmx>: for-pack(D1. .. .Dn.Subdir)
 ```
+
+## Generating doc for a new module
+1. Write doc in your module following the [ocamldoc rules](http://caml.inria.fr/pub/docs/manual-ocaml/ocamldoc.html)
+2. Register full path of the module in ide.odocl
