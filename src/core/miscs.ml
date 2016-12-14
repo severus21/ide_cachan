@@ -1,8 +1,21 @@
 open Gset
 
 
-
 (*Manque pour les tags*)
+
+(** Returns whether a is a subword of b *)
+let is_subword a b =
+    let current = ref 0 in
+    let iter c =
+        current := (String.index_from b !current c) + 1
+    in
+    try
+        String.iter iter a;
+        true
+    with
+    | Not_found -> false
+;;
+
 
 let print a = Printf.printf "%s" a
 
@@ -41,6 +54,14 @@ class ptr_ast (_ast:c_ast)=object
 
   val table = Hashtbl.create 50
   method fill_table = fill_table_ast table (! p_ast)
+  (* Research all the c_node associated to the subword "name"*)
+  method potential_name table subword = 
+    let table1 = Hashtbl.copy table in 
+    let aux x _ = 
+      if not (is_subword subword x) then Hashtbl.remove table1 x
+    in
+    Hashtbl.iter aux table1;
+    table1
 
   (* Research all the c_node associated to the function "name"*)
   method research name =
