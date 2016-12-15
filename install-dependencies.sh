@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPAM_DEPENDS="ocamlfind lablgtk ounit ocamlbuild"
+OPAM_DEPENDS="ocamlfind lablgtk ounit ocamlbuild ocamlfind"
 LIB_DEPENDS="texlive-science libgtk2.0-dev libcanberra-gtk-module"
 COMPILER_DEPENDS="make ocaml ocaml-native-compilers camlp4-extra opam"
 TESTING_DEPENDS=""
@@ -23,6 +23,8 @@ echo "let () =
         try Topdirs.dir_directory (Sys.getenv "OCAML_TOPLEVEL_PATH")
         with Not_found -> ()
   ;;">> ~/.ocamlinit
+
+export OCAML_TOPLEVEL_PATH=/home/travis/.opam/4.04.0/lib/toplevel
 
 unset OCAMLLIB
 

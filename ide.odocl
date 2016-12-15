@@ -1,5 +1,10 @@
-src/plugins/ocaml/Tl_ast
-src/plugins/ocaml/Plugin_fe
-src/structure/Core
-src/structure/Class
-src/structure/Module
+src/plugins/Factory
+
+src/core/Gset
+src/core/Miscs
+
+src/gui/GuiMain
+src/gui/GuiNavlist
+src/gui/GuiFindDialog
+
+tests/Test

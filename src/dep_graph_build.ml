@@ -11,6 +11,7 @@ let header = "\
 \\usepackage[dvipsnames]{xcolor}\
 \\usepackage[a4paper,text={16cm,22.7cm},centering]{geometry}\
 \\usepackage{gastex}\
+\\usepackage{hyperref}\
 \\gasset{frame=false}\
 \\parindent=0pt\
 \
@@ -42,7 +43,7 @@ class node ordre = object
 	
   method print_me out = output_string out ("\t\\node(" ^ name ^ ")(" ^ (string_of_int (fst position)) ^ "," ^ (string_of_int (snd position)) ^ "){" ^ name ^ "}\n")
   (* affiche une flèche de modul à self *)
-  method print_to modul =
+  method print_to modul out =
 *)
 
 
@@ -71,7 +72,7 @@ let rec give_positions size acc = match acc with
 let rec print_nodes modules liste_coord out = match liste_coord with
   |[] -> ()
   |(x,y)::q -> (let modul = List.hd modules in
-    output_string out ("\t\\node(" ^ modul ^ ")(" ^ (string_of_int x) ^ "," ^ (string_of_int y) ^ "){" ^ modul ^ "}\n") ;
+  output_string out ("\t\\node(" ^ modul ^ ")(" ^ (string_of_int x) ^ "," ^ (string_of_int y) ^ "){" ^ "\\href{http://www.truc.org}{" ^ modul ^ "}"  ^ "}\n") ;
     print_nodes (List.tl modules) q out)
 
 (* affiche la partie 'définitions des noeuds' en entier *)
@@ -162,7 +163,7 @@ let build_graph modules =
 	close_fic out ;
 	compile_tex ()
 
-
+let () = build_graph ["toto";"titi";"tyty";"tete";"jojo";"jyjy"]
 
 
 
