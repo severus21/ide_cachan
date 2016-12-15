@@ -54,7 +54,7 @@ end
 
 class table = object
   val table = Hashtbl.create 50
-  
+  method give_table () = table
   method fill_table c_ast = fill_table_ast table c_ast
    
 (* Research all the c_node associated to the subword "name"*)       
@@ -108,9 +108,9 @@ let to_file name_file c_ast =
 (* Write into a File the description of the c_ast*)
 
 let from_file_name name name_file =
-  let word = Scanf.fscanf name_file "%s " (fun x -> x) in
+  let word = Scanf.bscanf name_file "%s " (fun x -> x) in
   if word <> name then raise Not_compliant;
-  Scanf.fscanf name_file "%S " (fun x-> x)
+  Scanf.bscanf name_file "%S " (fun x-> x)
 
 
 (********* Read in a File the description of the c_ast and create the c_ast associated *********)
@@ -118,10 +118,10 @@ let from_file_name name name_file =
 
 
 let rec from_file_children name_file fin =
-  let word = Scanf.fscanf name_file "%s " (fun x->x) in
+  let word = Scanf.bscanf name_file "%s " (fun x->x) in
   if word <> "children:" then raise Not_compliant;
   let l = from_file_c_node name_file in
-  let word,word2,word3 = Scanf.fscanf name_file "%s %s %d " (fun x y z->(x,y,z)) in
+  let word,word2,word3 = Scanf.bscanf name_file "%s %s %d " (fun x y z->(x,y,z)) in
   if (word <>"Fchildren") ||(word2 <> "FNode")||(word3 <>fin) then raise Not_compliant;
   l
 
@@ -139,18 +139,18 @@ and from_file_node name_file fin =
 
 and from_file_c_node name_file = 
   let rec aux l=
-    let word = Scanf.fscanf name_file "%s " (fun x->x) in
+    let word = Scanf.bscanf name_file "%s " (fun x->x) in
     match word with
     |"FAst" -> List.rev l 
     | "Nil" -> aux (Nil::l)
     | "Node"->  
       begin
-        let i = Scanf.fscanf name_file "%d " (fun x->x) in
+        let i = Scanf.bscanf name_file "%d " (fun x->x) in
         aux (( Node ( from_file_node name_file i)) :: l ) 
       end
     |_-> raise Not_compliant
   in  
-  let word = Scanf.fscanf name_file "%s\n" (fun x->x) in
+  let word = Scanf.bscanf name_file "%s\n" (fun x->x) in
   if word = "Ast:" then aux []
   else raise Not_compliant
 
@@ -158,9 +158,9 @@ and from_file_c_node name_file =
 
 
 let main_from_file name_file =
-  let file = open_in name_file in
+  let file = Scanf.Scanning.open_in name_file in
   let l = try from_file_c_node file with Scanf.Scan_failure _ -> raise Not_compliant in
-  close_in file;
+  Scanf.Scanning.close_in file;
   new ptr_ast (l)
 
 
@@ -191,3 +191,24 @@ and c_ast_to_str tab ast=String.concat "" (List.map (c_node_to_str (tab^"\t")) a
 let print_c_ast ast= Printf.printf "%s\n" (c_ast_to_str "" ast)            
 
 
+
+open OUnit2
+
+let test1 () = 
+  let node1 = Node {name = "a"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
+  let node2 = Node {name = "b"; header = "b1"; body = ref "b2"; children = [Nil]; meta = new tags} in 
+  let node3 = Node {name = "c"; header = "c1"; body = ref "c2"; children = [node1; node2; Nil]; meta = new tags} in
+  let table = new table in
+  table#fill_table [node3];
+  let table2 = Hashtbl.create 50 in
+  Hashtbl.add table2 "c" (ref node3);
+  Hashtbl.add table2 "a" (ref node1); 
+  Hashtbl.add table2 "b" (ref node2);  
+  assert_equal (table#give_table ()) table2 
+
+
+
+let unittests ()=
+  "Miscs">:::[
+    "Test1:">::(function _-> test1())
+  ]

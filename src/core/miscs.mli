@@ -35,6 +35,7 @@ val print_c_ast : c_ast->unit
 class type table = object
   val table : (string,c_node ref) Hashtbl.t
   
+  method give_table : unit ->(string,c_node ref) Hashtbl.t 
   method fill_table : c_ast -> unit
    
 (* Research all the c_node associated to the subword "name"*)       
@@ -53,7 +54,7 @@ val to_file : string->c_ast->unit
 val main_from_file : string -> ptr_ast 
  
 
-
+val unittests : unit -> OUnit2.test
 
 
 
