@@ -98,12 +98,4 @@ end
 type gset = gset set;;
 
 
-let () =
-    let tag1 = TStr "Bla" in
-    let tag2 = TStr "coeur" in
-    let tag = [tag1;tag2] in
-    let tag_list = new tags in
-    tag_list#add_tag "dodo" tag;
-    let file = open_out "love" in
-    tag_list#to_file file;
-    close_out file
+
