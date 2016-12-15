@@ -17,7 +17,6 @@ let is_subword a b =
 ;;
 
 
-let print a = Printf.printf "%s" a
 
 let counter_miscs = ref 0
 
@@ -25,6 +24,11 @@ exception Fonction_not_exist
 exception Not_compliant
 
 
+type node_internal =  {name:string;header:string;body:string ref;children:c_ast; meta :gset tags} 
+and c_node =
+|Nil 
+|Node of node_internal
+and c_ast = c_node list 
 
 
 (* Fill a hashtable with the name of the function and their c_node associated *)
@@ -38,24 +42,23 @@ let rec fill_table_node table = function
     end
 
 and fill_table_ast table c_ast = List.iter (fill_table_node table) c_ast
+                         
 
-
-
-
-type c_node =
-|Nil 
-|Node of {name:string;header:string;body:string ref;children:c_ast;meta:gset tags} 
-and c_ast = c_node list                              
-
-class ptr_ast (_ast:c_ast)=object
+class ptr_ast (_ast:c_ast) = object
   val p_ast = ref _ast
     
   method ast= !(p_ast)             
 
+end                      
+
+
+class table = object
   val table = Hashtbl.create 50
-  method fill_table = fill_table_ast table (! p_ast)
-  (* Research all the c_node associated to the subword "name"*)
-  method potential_name table subword = 
+  
+  method fill_table c_ast = fill_table_ast table c_ast
+   
+(* Research all the c_node associated to the subword "name"*)       
+  method potential_name subword = 
     let table1 = Hashtbl.copy table in 
     let aux x _ = 
       if not (is_subword subword x) then Hashtbl.remove table1 x
@@ -63,15 +66,12 @@ class ptr_ast (_ast:c_ast)=object
     Hashtbl.iter aux table1;
     table1
 
-  (* Research all the c_node associated to the function "name"*)
+(* Research all the c_node associated to the function "name"*)
   method research name =
     if Hashtbl.mem table name then raise Fonction_not_exist;
     Hashtbl.find_all table name 
 
-end                      
-
-
-
+end
 
 
 
@@ -175,8 +175,6 @@ let main_from_file name_file =
 
 
 
-
-
 exception Bad_cnode of string
 let bad_cnode str = raise (Bad_cnode str)
 
@@ -191,4 +189,5 @@ let rec c_node_to_str tab=function
 and c_ast_to_str tab ast=String.concat "" (List.map (c_node_to_str (tab^"\t")) ast)
 
 let print_c_ast ast= Printf.printf "%s\n" (c_ast_to_str "" ast)            
+
 
