@@ -24,7 +24,7 @@ test:
 	$(BUILD) tests/test.native
 	@ln -s $(BUILD_DIR)/tests/test.native test.debug
 
-runtests: test
+runtests: test plugins
 	./test.debug -no-cache-filename -output-file test_logs.log
 
 plugins: debug

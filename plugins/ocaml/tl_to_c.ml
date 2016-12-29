@@ -355,3 +355,78 @@ and c_node_to_tl_ast=function
     |_->not_define "not yet"                                      
 )
 and c_ast_to_tl_ast x= List.map c_node_to_tl_ast x
+
+open OUnit2
+let unittests () = 
+    let bodies = [
+        ("tree", "type 'a tree=Nil|Node of 'a tree*'a tree*'a and \
+        'a forest='a tree list");
+
+        ("helloc_c", "class hello = object(self) \
+            val hello:string=\"hello\" \
+            val alpha = 12 \
+            val arf = ref true \
+            method set (key:string) = 12 \
+            initializer(arf:=false) \
+        end");
+
+        ("even_m", "module Even = struct \
+            type t = Zero | Succ of int \
+            let alpha = Zero \
+            let hello () = print_endline \"Even\" \
+        end");
+
+        ("even_m_t", "module type Even = sig \
+            type t = Zero | Succ of int \
+            val alpha : t \
+        end");
+
+        ("even_m_c", "module Even : sig \
+            type t = Zero | Succ of int \
+            val alpha : t \
+        end = struct \
+            type t = Zero | Succ of int \
+            let alpha = Zero \
+            let hello () = print_endline \"Even\" \
+        end");
+
+        ("even_odd", "module rec Even : sig \
+            type t = Zero | Succ of Odd.t \
+        end = struct \
+            type t = Zero | Succ of Odd.t \
+        end \
+        and Odd : sig \
+            type t = Succ of Even.t \
+        end = struct \
+            type t = Succ of Even.t \
+        end");
+
+        ("comparable", "module type Comparable = sig \
+            type t \
+            val compare : t -> t -> int \
+        end");
+
+        ("OrderList", "module OrderList (T:Comparable) = struct \
+            exception Empty \
+            type content = T.t \
+            type t = content list ref \
+            let comp = T.compare \
+        end");
+
+        ("ptr_ast", "class ptr_ast x: object \
+            val p_ast : c_ast ref \
+            method ast : c_ast \
+        end = object \
+            val p_ast = ref Nil \
+            method ast = Nil \
+        end");
+
+        ("top-level constraint", "val troll : int -> int");
+    ] in
+    "Tl_to_c" >:::[
+        "Import-Export">:::( List.map (function name,body->(
+            let tl_ast = Ml_to_tl.str_to_tl_ast body in
+            name>::function _-> assert_equal tl_ast (c_ast_to_tl_ast 
+                (tl_ast_to_c_ast tl_ast))
+        )) bodies)]
+                        

@@ -50,3 +50,6 @@ val tl_ast_to_folder : string->tl_ast -> unit
 (** Prints a tl_ast, for debbuging purposes
     @param ast a tl_ast*)
 val print_tl_ast : tl_ast -> unit
+
+(** Generate unittests for this module*)               
+val unittests : unit -> OUnit2.test 

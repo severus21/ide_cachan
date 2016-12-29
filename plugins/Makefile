@@ -12,10 +12,13 @@ default: $(PLUGINS)
 clean_%:
 	cd $* && make clean
 
+tests: 
+	cd $* && make tests
+
 clean: $(addprefix clean_,$(DIRS))
 	-rm *.cmxs
 
 doc_%:
-	cd $* && make doc
+	cd $* && rm -rf doc && make doc
 
 doc: $(addprefix doc_,$(DIRS))

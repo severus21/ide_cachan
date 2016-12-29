@@ -37,3 +37,4 @@ and class_elmt=
 |Cl_init of string
 |Cl_inherit of string * string option               
 and tl_ast = tl_struct list
+

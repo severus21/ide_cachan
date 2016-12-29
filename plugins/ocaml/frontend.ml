@@ -19,6 +19,9 @@ class plg_ocaml=object(self)
 
     method c_ast_to_folder path (ast:Core.Miscs.c_ast)=
         Ml_to_tl.tl_ast_to_folder path (Tl_to_c.c_ast_to_tl_ast ast)
+    
+    method unittests ()=
+        Tests.unittests ()
 end
 
 let () =

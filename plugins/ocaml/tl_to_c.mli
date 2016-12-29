@@ -9,3 +9,6 @@ val tl_ast_to_c_ast : Tl_ast.tl_ast->Core.Miscs.c_ast
     @param ast a c_ast
     @return the tl_ast related to ast*)
 val c_ast_to_tl_ast : Core.Miscs.c_ast->Tl_ast.tl_ast
+
+(** Generate unittests for this module*)               
+val unittests : unit -> OUnit2.test 

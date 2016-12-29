@@ -26,10 +26,13 @@ string_to_c_ast:string->c_ast;(**
     @param str string of file
     @return the c_ast related to file*)
 
-c_ast_to_folder:string->c_ast->unit(**
+c_ast_to_folder:string->c_ast->unit;(**
     Export a c_ast into a folder, ready for compilation/execution
     @param path : path of the folder
     @param ast : c_ast to export
     @return the string(ocaml code) related to ast*)
+
+unittests:unit->OUnit2.test(**
+    Export unittests API for this plugin*)
 >
 
