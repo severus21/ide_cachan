@@ -1,3 +1,6 @@
+open Gui.GuiMain
+open Plugins.Factory
+
 let () =
     load_plugins ();
     List.iter
