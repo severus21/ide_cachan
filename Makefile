@@ -47,3 +47,5 @@ clean:
 mrproper: clean
 	@rm -f *.debug *.release *.dvi *.tex *.log *.pdf *.aux oUnit*
 	@rm -rf doc/
+
+.PHONY: debug
