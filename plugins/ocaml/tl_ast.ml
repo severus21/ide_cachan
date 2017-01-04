@@ -4,7 +4,6 @@ exception Bad_tl_ast of string
 let bad_tl_ast msg = raise (Bad_tl_ast( "src/tl_ast.ml : "^msg^"\n" )) 
 (** TODO
   * extand class, module
-  * rewrite and factorize
   *)
 
 

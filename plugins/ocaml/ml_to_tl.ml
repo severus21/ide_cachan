@@ -3,109 +3,140 @@ open Asttypes
 
 open Tl_ast
 (* TODO When not_define afficher le nom de la structure non supportée*)  
-(* ** BEGIN Miscellaneous functions** *)
 
-(**Opens a file and returns its ocaml ast*)
+(* *** BEGIN Miscellaneous functions** *)
+
 let file_to_ast path = 
-  Parse.implementation (Lexing.from_channel (open_in path)) 
+    Parse.implementation (Lexing.from_channel (open_in path)) 
 
 let string_to_ast str =
-  Parse.implementation (Lexing.from_string str)
+    Parse.implementation (Lexing.from_string str)
 
 let print_ast ast = 
-  Printast.implementation (Format.formatter_of_out_channel stdout) ast
+    Printast.implementation (Format.formatter_of_out_channel stdout) ast
 
-(**Returns the substring corresponding to the location loc *)
+(** Returns the substring corresponding to the Location loc 
+    @param ml - the ocaml code (string)
+    @param loc - the Location.t
+    @return extract a sub-string of ml defined by loc*)
 let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; 
-                                         loc_ghost = _}  ->
-  let cs = s.Lexing.pos_cnum and ce = e.Lexing.pos_cnum in 
-  String.sub ml cs (ce - cs)
+    loc_ghost = _}  ->
+    let cs = s.Lexing.pos_cnum and ce = e.Lexing.pos_cnum in 
+    String.sub ml cs (ce - cs)
 
-  
-
+(** Compare positions(Lexing.position) which are inside the same file 
+    @param pos1 - Lexing.position
+    @param pos2 - Lexing.position
+    @return caml class_struct, caml constaint struct, header
+    @exception failwith if not in the same file*)
+let compare_lexing_pos (pos1:Lexing.position) pos2 =
+    if pos1.Lexing.pos_fname <> pos2.Lexing.pos_fname then
+        failwith "ml_to_tl:compare_lexing_pos failed : cannot compare positions 
+          in two different files";
+    pos1.Lexing.pos_cnum < pos2.Lexing.pos_cnum 
 
 (* ***END Miscellaneous functions*)
 
 
+
 (* ***BEGIN Conversion from ast to tl_ast*)
 
-(** Returns the string list ["Module1","Module2"] for the lign "open Module1.Module2"*)
+(** Handle open declaration 
+    @param od - Parsetree.open_description
+    @return string list ["Module1","Module2"] for the line "open Module1.Module2"*)
 let open_description_to_string_list od =
-  let rec od_to_sl lid acc = match lid with 
-    |Longident.Lident s -> s::acc
-    |Longident.Ldot (lid',s) -> od_to_sl lid' (s::acc)
-    |Longident.Lapply(_,_) -> failwith "I don't know what is this (Alice) (raised in tl_ast.ml)"
-  in
-  od_to_sl od.txt []
+    let rec od_to_sl lid acc = match lid with 
+        |Longident.Lident s -> s::acc
+        |Longident.Ldot (lid',s) -> od_to_sl lid' (s::acc)
+        |Longident.Lapply(_,_) -> failwith "I don't know what is this (Alice) (raised in tl_ast.ml)"
+    in
+    od_to_sl od.txt []
 
+(** Handle expression declaration(for now we assume this only var or
+    function declaration
+    @param name - name of the expression
+    @param body - full ocaml code of the expression
+    @return a Tl_struct describing the expression [Tl_fun|Tl_var] *) 
 let pexp_to_tl name body=function{pexp_desc=desc;_}->
     match desc with  
     | Pexp_function _ | Pexp_fun _-> Tl_fun(name, body)   
     | _ -> Tl_var(name, body)   
 
    
-(**
-  * @param class_expr of a class
-  * @return caml class_struct, caml constaint struct, header
+
+(** Handle Parsetree.core_type ( ie a type declaration/annotation/constraint) 
+    @param name - name of the type
+    @param - Parsetree.core_type
+    @return a Tl_struct describing the expression [Tl_none|Tl_constraint]
   *)
-
-let compare_lexing_pos (pos1:Lexing.position) pos2=    
-    assert (pos1.Lexing.pos_fname == pos2.Lexing.pos_fname);
-    pos1.Lexing.pos_cnum < pos2.Lexing.pos_cnum 
-
 let rec ptyp_to_tl name {ptyp_desc=desc;_}=
-match desc with
-|Ptyp_any -> Tl_none    
-|Ptyp_var str->Tl_constraint(name, "'"^str)
-|Ptyp_constr(lg_ident , next)->(
-   let constraints = List.map (function x->ptyp_to_tl "" x) next in
-   let tmp = List.fold_left (fun str x->if str <> "" then str^"."^x else x) "" (Longident.flatten lg_ident.txt) in
-   let value = List.fold_left (fun (value:string) (tl:tl_struct)->(match tl with 
-                     |Tl_constraint(_, v)->value^" "^v
-                     |Tl_none -> value
-                     |_->not_define "Bad ast")) "" constraints in          
+    match desc with
+    |Ptyp_any -> Tl_none    
+    |Ptyp_var str -> Tl_constraint(name, "'"^str)
+    |Ptyp_constr(lg_ident , next) -> (
+        let constraints = List.map (function x->ptyp_to_tl "" x) next in
+        let tmp = List.fold_left (fun str x->if str <> "" then str^"."^x else x) 
+            "" (Longident.flatten lg_ident.txt) in
+        let value = List.fold_left (fun (value:string) (tl:tl_struct)->(
+            match tl with 
+                |Tl_constraint(_, v)->value^" "^v
+                |Tl_none -> value
+                |_->not_define "Bad ast"
+        )) "" constraints in          
 
-   Tl_constraint( name, String.trim( value^" "^tmp)) 
-)
-|Ptyp_arrow (_,c_t1,c_t2)->((* print: x->y, c_t1 x and c_t2 y*)
-    match ptyp_to_tl name c_t1, ptyp_to_tl name c_t2 with   
-    |Tl_constraint(_,v1), Tl_constraint(_,v2)->Tl_constraint(name, v1^" -> "^v2)
-    |_,_->not_define "ptyp_to_tl Ptyp_arrow"    
-)
-|Ptyp_tuple cts->(
-    let constraints = List.map (ptyp_to_tl name) cts in
-    Tl_constraint( name, (List.fold_left (fun v0 ->(function
-        |Tl_constraint(_,v) ->if v0 <> "" then v0^" * "^v else v
-        |_->not_define "ptyp_to_tl Ptyp_tuple")
-    ) "" constraints)) 
-)   
-|_-> not_define "Ptyp_* not supported"
+        Tl_constraint( name, String.trim( value^" "^tmp)) 
+    )
+    |Ptyp_arrow (_,c_t1,c_t2) -> (
+        match ptyp_to_tl name c_t1, ptyp_to_tl name c_t2 with   
+        |Tl_constraint(_,v1), Tl_constraint(_,v2)->
+            Tl_constraint(name, v1^" -> "^v2)
+        |_,_->not_define "ptyp_to_tl Ptyp_arrow"    
+    )
+    |Ptyp_tuple cts->(
+        let constraints = List.map (ptyp_to_tl name) cts in
+        Tl_constraint( name, (List.fold_left (fun v0 ->(function
+            |Tl_constraint(_,v) ->if v0 <> "" then v0^" * "^v else v
+            |_->not_define "ptyp_to_tl Ptyp_tuple")
+        ) "" constraints)) 
+    )   
+    |_-> not_define "Ptyp_* not supported"
 
+(** Handler Parsetree.class_type_field( describe a type definition/contraint 
+    inside a class or a class type
+    @param - Parsetree.class_type_field
+    @result a class_elmt which ought to be interpreted as class_elmt type*)
 let pctf_to_tl {pctf_desc=desc;_}=
-match desc with  
-|Pctf_val(name, _, _, c_type)->Cl_attribut(ptyp_to_tl name c_type)
-|Pctf_method(name, private_f, _, c_type)->(
-    Cl_method(ptyp_to_tl name c_type, 
-              match private_f with|Private->Tl_private|Public->Tl_public)
-)
-|Pctf_inherit c_t->(
-    match c_t.pcty_desc with
-    |Pcty_constr (lg_ident, _)->  
-        Cl_inherit(List.fold_left (fun str x->str^x) 
-            "" (Longident.flatten lg_ident.txt), None) 
-    |_->not_define "pctf_to_tl Pctf_inherit"      
- )
-|_-> not_define "Pctf_* not supported"
+    match desc with  
+    |Pctf_val(name, _, _, c_type)->Cl_attribut(ptyp_to_tl name c_type)
+    |Pctf_method(name, private_f, _, c_type)->(
+        Cl_method(ptyp_to_tl name c_type, 
+            match private_f with |Private->Tl_private |Public->Tl_public)
+    )
+    |Pctf_inherit c_t->(
+        match c_t.pcty_desc with
+        |Pcty_constr (lg_ident, _)->  
+            Cl_inherit(List.fold_left (fun str x->str^x) 
+                "" (Longident.flatten lg_ident.txt), None) 
+        |_->not_define "pctf_to_tl Pctf_inherit"      
+     )
+    |_-> not_define "Pctf_* not supported"
 
+(** Handle Parsetree.class_type( describe a class type definition/constraint)
+    @param - Parsetree.class_type
+    @return a list of class_elmt which ought to be interpreted as class_elmt type*)
 let pcty_to_tl {pcty_desc=desc;_}=
-match desc with
-|Pcty_signature cl_s->List.map pctf_to_tl cl_s.pcsig_fields
-|_->not_define "Pcty_* not supported"   
+    match desc with
+    |Pcty_signature cl_s->List.map pctf_to_tl cl_s.pcsig_fields
+    |_->not_define "Pcty_* not supported"   
 
-
+(** Analyse a Parsetree.class_expr_desc in order to find 
+    the beginning of the class header, the class declaration, the class constraint
+    @param Parsetree.class_expr_desc
+    @return class header position(Lexing.position), 
+        class declaration(Parsetree.class_structure), class constraint( a list of class_elmt which ought to be interpreted as class_elmt type*)
 let rec get_class_struct = function 
     |Pcl_fun(_,_,_, child_ast)->( 
-        get_class_struct child_ast.pcl_desc(*on est entrain de parser les arguments de la classe, child => child ast*)
+        get_class_struct child_ast.pcl_desc
     )
     |Pcl_structure(ast)->(
         ast.pcstr_self.ppat_loc.Location.loc_start, ast, [] 
@@ -115,14 +146,13 @@ let rec get_class_struct = function
         let pos2 = cl_t.pcty_loc.Location.loc_start in
         let header_end = if compare_lexing_pos pos1 pos2 then pos1 else pos2 in 
         header_end, cl_struct, pcty_to_tl cl_t   
-
     )   
     |_-> not_define "Pcl_* not supported"                                 
 
-(**
-  * @param Pcl_structure c_struct.pcstr_fields.listfield
-  * @return (attrs list, methods list)
-  *)
+(** Handle Parsetree.class_field list( describe the content of a class)
+    @param ml - the ocaml code
+    @param fields - Parsetree.class_field list
+    @return a list of class_elmt in the same order than the fields*)
 let class_fields_to_attrs_methods ml fields=
     let field_to_cl_field pcl_struct=
         match pcl_struct.pcf_desc with
@@ -146,7 +176,8 @@ let class_fields_to_attrs_methods ml fields=
                 |Cfk_concrete(_,expr1) ->expr1.pexp_loc
             ) in
 
-            let loc2= {Location.loc_start=loc.loc.Location.loc_start; loc_end=loc1.Location.loc_end; loc_ghost=false} in
+            let loc2= {Location.loc_start=loc.loc.Location.loc_start; 
+                loc_end=loc1.Location.loc_end; loc_ghost=false} in
 
             let dattr = Tl_var(loc.txt, get_str_from_location ml loc2) in
 
@@ -166,9 +197,12 @@ let class_fields_to_attrs_methods ml fields=
     in
     List.map field_to_cl_field fields    
 
+(** Handler Parsetree.class_description( an ocaml class)
+    @param ml - the ocaml code
+    @param - Parsetree.class_description
+    @return a Tl_struct describing the class : [Tl_class]*)
 let class_to_tl_class ml = function{pci_virt=virt; pci_params=_; 
-                                    pci_name=name; pci_expr=expr; pci_loc=loc;
-                                    pci_attributes=_}->
+    pci_name=name; pci_expr=expr; pci_loc=loc; pci_attributes=_} ->
     
     let header_end, struct_ast, constraints = get_class_struct expr.pcl_desc in    
     let elmts = class_fields_to_attrs_methods ml struct_ast.pcstr_fields in  
@@ -193,8 +227,12 @@ let class_to_tl_class ml = function{pci_virt=virt; pci_params=_;
         c_elmts = constraints;
     }
 
+(** Handler Parsetree.class_description( an ocaml class type)
+    @param ml - the ocaml code
+    @param - Parsetree.class_description
+    @return a Tl_struct describing the class type: [Tl_class]*)
 let class_type_to_tl_class = function{pci_virt=virt; pci_params=_; 
-                                    pci_name=name; pci_expr=expr;_}-> 
+    pci_name=name; pci_expr=expr;_}-> 
     
     let constraints = pcty_to_tl expr in  
 
@@ -206,16 +244,26 @@ let class_type_to_tl_class = function{pci_virt=virt; pci_params=_;
         elmts = [];
         c_elmts = constraints;
     }
-(*body : code des types, function is_rec*)      
+
+(** Handle Parsetree.type_declaration list( ie type declaration linked by "and")
+    @param t_dlcs - Parsetree.type_declaration list
+    @apram body - ocaml code related to t_dcls
+    @return a Tl_struct : [Tl_type]*)
 let type_declarations_to_tl t_dcls body=
     Tl_type((List.map (function d->d.ptype_name.txt) t_dcls), body)
 
+(** Handle Parsetree.value_description( ie "val " entry in an mli 
+    or in a signature
+    @param ml - the ocaml code
+    @param value - Parsetree.value_description
+    @return a Tl_struct : [Tl_var]*)      
 let value_description_to_tl_var ml value=
   Tl_var(value.pval_name.txt, get_str_from_location ml value.pval_loc)
 
-(**
-  * @param signature(signature_item list )
-  *)
+(** Handle Parsetree.signature( content of a module's signature) 
+    @param ml - the ocaml code
+    @param signatures - Prasetree.signature( a list of signature_item)
+*)    
 let sign_to_tl_sign ml signatures=
     let caml_to_tl {psig_desc=desc;psig_loc=loc}=
         match desc with
@@ -228,26 +276,41 @@ let sign_to_tl_sign ml signatures=
     
     (List.map caml_to_tl signatures)  
 
+(** Find the functor header ie separate the "module $1 = $2" where 
+    "module $1 =" is the header
+    @param loc_end - end of the functor
+    @param m_expr - a module expression(defining the functor)
+    @return (then end of the header, the functor body)*)      
 let rec find_functor_header loc_end m_expr = function
-|Pmod_functor(_,_, m_expr0)->(
-    find_functor_header m_expr0.pmod_loc.Location.loc_start m_expr0 m_expr0.pmod_desc
-)    
-|_->loc_end, m_expr
+    |Pmod_functor(_,_, m_expr0)->(
+        find_functor_header m_expr0.pmod_loc.Location.loc_start 
+            m_expr0 m_expr0.pmod_desc
+    )    
+    |_->loc_end, m_expr
 
+(** Handle Parsetree.structure_item (ie an ocaml structure)
+    @param  ml - the ocaml code
+    @param - Parsetree.structure_item
+    @return a Tl_struct*)
 let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     let body = get_str_from_location ml loc in
     
-    (* args Pmod_, name provient du parent* *)
+    (** Handle Parsetree.module_expr(ie a module/foncteur/signature declaration)
+        @param - string Asttypes.loc (name of the structure)
+        @param - Parsetree.module_expr
+        @return a Tl_struct : [Tl_module|Tl_module_constraint|Tl_functor]
+    *)  
     let rec pmod_to_tl ({txt=name;loc=loc} as args )  =function
         |Pmod_structure s-> Tl_module(name, ast_to_tl_ast ml s)
         |Pmod_constraint (m, mt)->(
-                Tl_module_constraint(name, (pmod_to_tl args m.pmod_desc), 
-                          (pmty_to_tl name (Some mt)))
+            Tl_module_constraint(name, (pmod_to_tl args m.pmod_desc), 
+                (pmty_to_tl name (Some mt)))
         )
         |Pmod_functor({loc=_loc;_}, _, m_expr) as func->(
-            let header_end, expr = find_functor_header _loc.Location.loc_end m_expr func in
+            let header_end, expr = find_functor_header _loc.Location.loc_end 
+                m_expr func in
             let header_loc = {Location.loc_start=loc.Location.loc_start; 
-                              loc_end=header_end; loc_ghost=false} in
+                loc_end=header_end; loc_ghost=false} in
             let header = String.trim (get_str_from_location ml header_loc) in   
             
             let body =  (pmod_to_tl {txt=""; loc=loc}  expr.pmod_desc) in
@@ -256,7 +319,11 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
             |_->Tl_functor(name, header, [body])                         
         )   
         |_-> not_define "Pmod_* not supported"
-    (* name, option(module_type) *)           
+
+    (** Handle Parsetree.module_type option( ie signature or a constraint)
+        @param name - name of the structure
+        @param - Parsetree.module_type option
+        @return a Tl_struct : [Tl_sign|Tl_type] *)           
     and pmty_to_tl name =function
         |None -> Tl_sign( name, [])   
         |Some m_type ->(
@@ -268,7 +335,6 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
             |_-> not_define "Pmty_* not supported" 
         )           
     in
-      
 
     match struct_item with 
     |Pstr_open open_desc ->  
@@ -300,16 +366,22 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     |Pstr_attribute _->Tl_none      
     |_ -> not_define "Pstr_* not supported" 
 
-
-(*ml is a string containing the whole file from which ast was created *)
+(** Handler Parsetree.structure(ie an ocaml file)
+    @param ml - the ocaml code of the file
+    @param - Parsetree.structure
+    @return a Tl_ast( a list of Tl_struct) describing the file*)
 and ast_to_tl_ast ml ast = List.map (struct_to_tl_struct ml) ast
     
-(*let string_to_tl_ast ml = List.map (struct_to_tl_struct ml) (string_to_ast ml)*)
-
-
 (* ***END Conversion from ast to tl_ast*)
-  
+
+
+
 (* ***BEGIN Printing of a tl_ast*)
+
+(** Export a Tl_ast.class_elmt into a string
+    @param head - string describing the begining of a class
+    @param - Tl_ast.class_elmt
+    @return a string : concatenation of head and a string of class_elmt*)
 let rec class_elmt_to_str head= function
     |Cl_attribut Tl_var(_, value) ->
         Format.sprintf "%s\tval %s\n" head value 
@@ -327,19 +399,31 @@ let rec class_elmt_to_str head= function
     |Cl_init body-> Format.sprintf "%s\tinitializer %s\n" head body    
     |Cl_inherit (name,as_str)-> Format.sprintf "%s\tinherit %s%s\n" head name 
           (match as_str with |None->"" |Some s-> " as "^s)
-    |_->not_define "baf_tl_ast class_elmt_to_str"                  
-and tl_struct_to_str root =function (* root indicate that the element is a top level or insigne module*) 
-    |Tl_open(_,s)-> Format.sprintf "%s\n" s
-    |Tl_var(_, expr)->Format.sprintf "%s\n" expr 
+    |_->not_define "baf_tl_ast class_elmt_to_str"      
+
+(** Export a Tl_ast.tl_struct to a string
+    @param root - boolean that indicate wether the element is at top level or not
+    @param - Tl_ast.tl_struct
+    @return a string*)          
+and tl_struct_to_str root =function 
+    |Tl_open(_,s)->
+        Format.sprintf "%s\n" s
+    |Tl_var(_, expr)->
+        Format.sprintf "%s\n" expr 
     |Tl_constraint(name, expr)->(
         if root then Format.sprintf "val %s : %s\n" name expr
         else Format.sprintf "%s\n" expr
     )           
-    |Tl_fun(_, expr)->Format.sprintf "%s\n" expr
-    |Tl_exception(_, values)->Format.sprintf "%s\n" values    
-    |Tl_type(_, value)->Format.sprintf "%s\n" value
-    |Tl_sign(name,ast)->Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
-    |Tl_module(name, ast)-> Format.sprintf "module %s = struct\n%send\n" name (tl_ast_to_str ast) 
+    |Tl_fun(_, expr)->
+        Format.sprintf "%s\n" expr
+    |Tl_exception(_, values)->
+        Format.sprintf "%s\n" values    
+    |Tl_type(_, value)->
+        Format.sprintf "%s\n" value
+    |Tl_sign(name,ast)->
+        Format.sprintf "module type %s = sig\n%send\n" name (tl_ast_to_str ast)
+    |Tl_module(name, ast)-> 
+        Format.sprintf "module %s = struct\n%send\n" name (tl_ast_to_str ast) 
     |Tl_module_constraint(name, Tl_module(_,m), Tl_sign(_,mt))->(
         Format.sprintf "module %s : sig\n\
           %s\
@@ -350,7 +434,9 @@ and tl_struct_to_str root =function (* root indicate that the element is a top l
     |Tl_recmodule(modules,_)->(
        let str = (List.fold_left (fun str x->(
             let _str = tl_struct_to_str true x in
-            let tmp = String.sub _str 7 (String.length _str -7) in (*removed module*)                 
+
+            (* removed "module"*)  
+            let tmp = String.sub _str 7 (String.length _str -7) in                 
             str^tmp^"and " 
         )) "module rec " modules) in
 
@@ -360,72 +446,43 @@ and tl_struct_to_str root =function (* root indicate that the element is a top l
         Format.sprintf "module %s struct\n%send\n" header (tl_ast_to_str next)
     )
     |Tl_class cl ->(
-       let elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
-       let c_elmts_str = List.fold_left (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.c_elmts in
+        let elmts_str = List.fold_left 
+            (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.elmts in
+        let c_elmts_str = List.fold_left
+            (fun head elmt -> (class_elmt_to_str head elmt)) "" cl.c_elmts in
          
-       let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
+        let self_str = (match cl.self with |None->"" |Some(s)->"("^s^")" )in 
 
-       match cl.c_elmts, cl.elmts with
-       |[], [] -> ""
-       |_::_, []  -> Format.sprintf "class type %s = object\n%send\n" cl.name c_elmts_str   
-       |[], _::_  -> Format.sprintf "%s%s\n%send\n" cl.header self_str elmts_str   
-       |_, _   ->(Format.sprintf "%sobject\n%send = object%s\n%send\n" cl.header  
+        match cl.c_elmts, cl.elmts with
+        |[], [] -> ""
+        |_::_, []  ->
+            Format.sprintf "class type %s = object\n%send\n" cl.name c_elmts_str   
+        |[], _::_  ->
+            Format.sprintf "%s%s\n%send\n" cl.header self_str elmts_str   
+        |_, _   ->(
+            Format.sprintf "%sobject\n%send = object%s\n%send\n" cl.header  
                 c_elmts_str self_str elmts_str         
-       )        
+        )        
     )
-    |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> Format.sprintf "%s%s" head  (tl_struct_to_str false cl)) "" cls 
+    |Tl_class_and(cls,_) -> List.fold_left (fun head cl -> 
+        Format.sprintf "%s%s" head  (tl_struct_to_str false cl)) "" cls 
     |Tl_none -> ""
     |_->failwith "Bad tree"               
 
+(** Export a Tl_ast.tl_ast to a string
+    @param tl - Tl_ast.tl_ast
+    @return a string*)          
 and tl_ast_to_str tl = String.concat "" (List.map (tl_struct_to_str true) tl)
-
-let name_to_path name= List.fold_left Filename.concat "" (String.split_on_char '@' name)
-
-     (**all roots are files*)                         
-let tl_ast_to_files tl=
-    List.concat (List.map (function
-        |Tl_module(name, ast) -> [(name_to_path name)^".ml", ast] 
-        |Tl_sign(name, ast) -> [(name_to_path name)^".mli", ast]
-        |Tl_module_constraint (name, Tl_module(_, ast0), Tl_sign(_,ast1))->(
-            let path = name_to_path name in 
-            [path^".ml",ast0;path^".mli",ast1]
-        )
-        |_->not_define "tl_ast_to_files"
-    ) tl)
-
-(*TODO makefile, .mlpack and other data*)
-let write_file path (relative_path, ast)= 
-    let location = Filename.concat path relative_path in
-    let dir = Filename.dirname location in
-    
-    Utility.mkdir dir 0o740;
-
-    let fd = open_out location in  
-    Printf.fprintf fd "%s" (tl_ast_to_str ast);  
-    close_out fd
-
-let tl_ast_to_folder path tl_ast=
-    let files = tl_ast_to_files tl_ast in
-    List.iter (write_file path) files
-
-let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
-
 
 (* ***END Printing of a tl_ast*)
 
 
-(* ***BEGIN Some functions to test more easily *)
+(* *** BEGIN mutli-files handling*)
 
-let ast_from_string s = Parse.implementation (Lexing.from_string s) 
-let str_to_tl_ast s = ast_to_tl_ast s (ast_from_string s)
-let str_to_tl_struct s = List.hd (str_to_tl_ast s)
-
-(* ***END Some functions to test more easily *)
-
-(** 
-*   @param (rule number, entry)
-* *)                  
-
+(** Transform a path to a Tl_ast.Tl_module name,
+    indeed, we encode the directory structure in modules' name
+    @param name - a string ex: A/B/C 
+    @return a path(string) ex: A@B@C*)
 let path_to_name project_path path=
     let rec _path_to_name path = 
     if path = "" || path = "." || path = "/" || path = "\\" then ""
@@ -437,15 +494,84 @@ let path_to_name project_path path=
             (if prefix <> "" then prefix^"@" else prefix)^name  
         )else prefix 
     ) in
-    assert( not (String.contains path '@'));   
 
     let len0 = String.length project_path and len1 = String.length path in
-    assert(project_path = (String.sub path 0 len0));  
-    _path_to_name (Filename.remove_extension (String.sub path len0 (len1-len0)))  
+    _path_to_name (Filename.remove_extension (String.sub path len0 (len1-len0)))
 
+(** Transform a structure name to a path name,
+    it is the reciprocal function of path_to_name    
+    @param name - a string ex: A@B@C 
+    @return a path(string) ex: A/B/C*)
+let name_to_path name= 
+    List.fold_left Filename.concat "" (String.split_on_char '@' name)
+
+(** Transform a tl_ast to a list of ocaml files
+    @param tl - Tl_ast.tl_ast
+    @return a list of files(location, ast of file)*)                         
+let tl_ast_to_files tl=(* all roots of tl are files by building*)
+    List.concat (List.map (function
+        |Tl_module(name, ast) -> [(name_to_path name)^".ml", ast] 
+        |Tl_sign(name, ast) -> [(name_to_path name)^".mli", ast]
+        |Tl_module_constraint (name, Tl_module(_, ast0), Tl_sign(_,ast1))->(
+            let path = name_to_path name in 
+            [path^".ml",ast0;path^".mli",ast1]
+        )
+        |_->not_define "tl_ast_to_files"
+    ) tl)
+
+(*TODO makefile, .mlpack and other data*)
+(** Write a file to secondary memory
+    @param path - parent path use to export ocaml code
+    @param relative_apth - path of file inside export dir
+    @param ast - ast of the file
+    @return unit*)      
+let write_file path (relative_path, ast)= 
+    let location = Filename.concat path relative_path in
+    let dir = Filename.dirname location in
     
+    Utility.mkdir dir 0o740;
 
-let entry_to_tl_struct project_path=function(*il faudrait un truc comme un numero de rule*)
+    let fd = open_out location in  
+    Printf.fprintf fd "%s" (tl_ast_to_str ast);  
+    close_out fd
+
+(** Export a Tl_ast.tl_ast into a folder
+    @param path - path of the folder
+    @param tl_ast - ast to export
+    @return unit*)      
+let tl_ast_to_folder path tl_ast=
+    let files = tl_ast_to_files tl_ast in
+    List.iter (write_file path) files
+
+(** Basic printing of a Tl_ast.tl_ast, for debugging mainly
+    @param tl - Tl_ast.tl_ast
+    @return unit*)
+let print_tl_ast tl = Printf.printf "%s\n" (tl_ast_to_str tl)
+
+(** Get the Parstree.structure from a string
+    @param s - a string(ocaml code)
+    @return Parsetree.structure*)
+let ast_from_string s = Parse.implementation (Lexing.from_string s) 
+
+(** Get the Tl_ast.tl_ast from a string
+    @param s - a string(ocaml code)
+    @return Tl_ast.tl_ast*)                          
+let str_to_tl_ast s = ast_to_tl_ast s (ast_from_string s)
+
+(** Get the first structure of a Tl_ast.tl_ast represented by a string,
+    @param s - a string(ocaml code)
+    @return Tl_ast.tl_struct*)
+let str_to_tl_struct s = List.hd (str_to_tl_ast s)
+
+(** Transform an entry(entry id, tl_struct list),
+    entry_id = 1 -> the entry represent an ocaml file without .mli
+    entry_id = 0 -> the entry represent an ocaml file with .mli
+    tl_struct list -> 
+        ml_structure::mli_structure::[] for 0 
+        ml_structure::[] for 1
+    @param project_path - path of the directory imported, usefull to encode 
+    directory structure in module name.*)
+let entry_to_tl_struct project_path=function
 |0,ml::mli::[] ->(
     let name = path_to_name project_path ml in
     Tl_module_constraint(name, 
@@ -460,7 +586,9 @@ let entry_to_tl_struct project_path=function(*il faudrait un truc comme un numer
 |n,l when n<3 ->not_define (Printf.sprintf "%d %d" n (List.length l))              
 |_->not_define "rule_to_tl_ast bad rule"   
 
-     
+(** Transform an entry list to a Tl_ast.tl_ast
+    @param num_rule - it will be the id of each entry in entries
+    @param entries - a list of entry*)
 let entries_to_tl_ast project_path (num_rule,entries)=
     List.map (fun e->entry_to_tl_struct project_path (num_rule,e)) entries    
 
@@ -743,7 +871,6 @@ let export_suite()=
         "tl_ast_to_str">:::( List.map (function name, input, output->
             name>::(function _->(
                 assert_equal (tl_ast_to_str (str_to_tl_ast input)) output
-        (*assert_equal (let t=(tl_ast_to_str (str_to_tl_ast input)) in Printf.printf "#%s#\n" t;t) (let t=output in Printf.printf "@%s@\n" t;t)*)
             ))
             ) ml_strs)
 

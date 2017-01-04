@@ -1,3 +1,6 @@
+(**
+    plg_ocam is an implementation that is a subtype of Plugins.Plugin.plug
+*)  
 class plg_ocaml=object(self)
 
     method name = "OCaml"
@@ -5,9 +8,12 @@ class plg_ocaml=object(self)
     method file_extensions = [
         ["ml";"mli"];
         ["ml"]
-        ]
+    ]
 
     method path_to_c_ast path=
+        (** First we scan the path(dir or file) to retrieve the files matching self#file_extensions in res
+            res will be transforme to c_ast
+        *)
         let res, unmatched_files = Extract.extract_from_rules path (self#file_extensions) in 
         let project_path = (match Filename.dirname path with |"."->"" |p->p) in
         let tl_asts = List.map (Ml_to_tl.entries_to_tl_ast project_path) (Utility.enumerate res) in

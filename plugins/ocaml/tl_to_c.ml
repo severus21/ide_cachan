@@ -2,18 +2,25 @@ open Core.Miscs
 open Core.Gset      
 open Tl_ast
 
-(* export to c_ast list*)   
-(*il faut tagger l'ast sinon on ne sais plus qui est quoi *)
-(* db: :(string, ref string) Hashtbl.t), np namespace*)
+(** Used to make reference a string owned by a node in tl_ast, with deduplication
+    needed because ocaml code can be owned by several tl_ast node for instance 
+    when there is a ocaml code "type a = and b ="
+    @param - namespace of the file(string) to avoid to share code between different files
+    @param - code(string)
+    @return a reference on code
+*)  
 let ptr = let db = Hashtbl.create 1024 in fun (np:string) (x:string)->
+    (* db: (string, ref string) Hashtbl.t)*)
     if (Hashtbl.mem db np) = false then Hashtbl.add db np (Hashtbl.create 1024);
     let tmp = Hashtbl.find db np in 
     
     if (Hashtbl.mem tmp x) = false then Hashtbl.add tmp x (ref x); 
     Hashtbl.find tmp x 
 
-
-
+(** Transform a Tl_ast.class_element to c_ast node
+    @param np - namespace of the file
+    @param cl_elmt - Tl_ast.class_element
+    @return a list of Core.misc.c_ast*)
 let rec cl_elmt_to_core (np:string) cl_elmt=
     let meta = new tags in 
     match cl_elmt with  
@@ -87,6 +94,11 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
             meta=meta;
         })]
     )
+ 
+(** Transform a Tl_ast.tl_struct to Core.Misc.c_ast node
+    @param np - namespace of the file
+    @param tl_struct - Tl_ast.tl_struct
+    @return a list of Core.misc.c_ast*)
 and tl_struct_to_core np tl_struct=
     let meta = new tags in
     match tl_struct with
@@ -238,11 +250,21 @@ and tl_struct_to_core np tl_struct=
             children = _tl_ast_to_c_ast np cls;
             meta=meta})]
     ) 
+(** Transform a Tl_ast.tl_ast to Core.Misc.c_ast node
+    @param np - namespace of the file
+    @param tl_ast - Tl_ast.tl_ast
+    @return a list of Core.misc.c_ast*)
 and _tl_ast_to_c_ast np = function tl_ast -> 
     List.concat (List.map (tl_struct_to_core np) tl_ast)
 
+(** *)      
 let tl_ast_to_c_ast = _tl_ast_to_c_ast ""
 
+(* *** BEGIN *)
+
+(** Transform a Core.misc.c_ast representing a ocaml type 
+    @param - Core.Misc.internal_node
+    @return string representing the type*) 
 let c_type_to_tl_type =function
 |Nil->not_define "Bad core node for type_leaf"
 |Node node->(    
@@ -251,6 +273,11 @@ let c_type_to_tl_type =function
     |_->not_define "Bad core node for type_leafoo"
  )
 
+(** Split a list of c_node into sublist, according to the "plg_desc" tag
+    Usefull for spliting type definition from implementation,
+    in a Tl_module_constraint for instance.
+    @param prefix - a string used to separate nodes
+    @return two sublists (type nodes, implem nodes)*)
 let rec split_c_constraint prefix=function
 |[]-> [], []   
 |Nil::_-> not_define "not def"
@@ -264,6 +291,9 @@ let rec split_c_constraint prefix=function
     |_->not_define "not def"
 )
 
+(** Transform a Core.Misc.internal_node to Tl_ast.class_elmt
+    @param - Core.Misc.internal_node
+    @return Tl_ast.class_elmt*)
 let rec c_ast_to_cl_elmt=function
 |Nil ->not_define "bas ast c_ast_to_cl_elmt" 
 |Node node->(  
@@ -296,6 +326,10 @@ let rec c_ast_to_cl_elmt=function
         |s->Some s)
     |_->bad_cnode "c_ast_to_cl_elmt"                             
 )
+
+(** Transform a Core.Misc.internal_node to Tl_ast.Tl_struct
+    @param - Core.Misc.internal_node
+    @return Tl_ast.Tl_struct*)
 and c_node_to_tl_ast=function
 |Nil -> Tl_none
 |Node node->(          
@@ -354,6 +388,10 @@ and c_node_to_tl_ast=function
         Tl_class_and(c_ast_to_tl_ast node.children, !(node.body))
     |_->not_define "not yet"                                      
 )
+
+(** Transform a Core.Misc.c_ast into a Tl_ast.tl_ast
+    @param x - Core.Misc.c_ast(a list of nodes)
+    @return a Tl_ast.tl_ast*)
 and c_ast_to_tl_ast x= List.map c_node_to_tl_ast x
 
 open OUnit2
