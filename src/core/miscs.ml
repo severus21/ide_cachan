@@ -24,6 +24,11 @@ exception Fonction_not_exist
 exception Not_compliant
 
 
+
+
+(**Description of a c_ast*)
+
+
 type node_internal =  {name:string;header:string;body:string ref;children:c_ast; meta :gset tags} 
 and c_node =
 |Nil 
@@ -31,7 +36,9 @@ and c_node =
 and c_ast = c_node list 
 
 
-(* Fill a hashtable with the name of the function and their c_node associated *)
+
+
+(** Fill a hashtable with the name of the function and their c_node associated *)
 let rec fill_table_node table = function
   |Nil -> ()
   |Node a as s->
@@ -42,22 +49,27 @@ let rec fill_table_node table = function
     end
 
 and fill_table_ast table c_ast = List.iter (fill_table_node table) c_ast
-                         
-
+   
+                      
+(**Class that contains the ast*)
 class ptr_ast (_ast:c_ast) = object
   val p_ast = ref _ast
     
   method ast= !(p_ast)             
 
-end                      
+end   
 
+                   
 
+(**Table that contained the name of the node and the node associated *)
 class table = object
   val table = Hashtbl.create 50
   method give_table () = table
   method fill_table c_ast = fill_table_ast table c_ast
+
+
    
-(* Research all the c_node associated to the subword "name"*)       
+(** Research all the c_node associated to the subword "name"*)       
   method potential_name subword = 
     let table1 = Hashtbl.copy table in 
     let aux x _ = 
@@ -66,7 +78,7 @@ class table = object
     Hashtbl.iter aux table1;
     table1
 
-(* Research all the c_node associated to the function "name"*)
+(** Research all the c_node associated to the function "name"*)
   method research name =
     if Hashtbl.mem table name then raise Fonction_not_exist;
     Hashtbl.find_all table name 
@@ -75,7 +87,7 @@ end
 
 
 
-(* Write into a File the description of the c_ast*)
+(** Write into a File the description of the c_ast*)
 let to_file name_file c_ast =
     let rec to_file_aux file =function
       |Nil -> Printf.fprintf file "Nil\n";
@@ -105,7 +117,7 @@ let to_file name_file c_ast =
 
 
 
-(* Write into a File the description of the c_ast*)
+(** Write into a File the description of the c_ast*)
 
 let from_file_name name name_file =
   let word = Scanf.bscanf name_file "%s " (fun x -> x) in
@@ -113,7 +125,7 @@ let from_file_name name name_file =
   Scanf.bscanf name_file "%S " (fun x-> x)
 
 
-(********* Read in a File the description of the c_ast and create the c_ast associated *********)
+(** Read in a File the description of the c_ast and create the c_ast associated *)
 
 
 
@@ -165,12 +177,31 @@ let main_from_file name_file =
 
 
 
+(** Equality function on a c_ast*)
+
+
+let rec c_equal c_ast1 c_ast2 =
+  match c_ast1,c_ast2 with 
+  |[],[]-> true
+  |x::h,y::t-> (aux_equal x y) && (c_equal h t)
+  |_,_->false
+
+and aux_equal c_node1 c_node2 = 
+  match c_node1, c_node2 with
+  |Nil,Nil -> true
+  |Node a, Node b -> (a.name = b.name) &&
+    (a.header = b.header)&&
+    (a.body = b.body)&&
+    (c_equal (a.children) (b.children))&&
+    (a.meta#equal (b.meta))
+  |_,_-> false
 
 
 
 
 
-(**)
+
+(**Print the ast*)
 
 
 
@@ -192,9 +223,10 @@ let print_c_ast ast= Printf.printf "%s\n" (c_ast_to_str "" ast)
 
 
 
+(**Tests*)
 open OUnit2
 
-let test1 () = 
+let test_fill_table () = 
   let node1 = Node {name = "a"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
   let node2 = Node {name = "b"; header = "b1"; body = ref "b2"; children = [Nil]; meta = new tags} in 
   let node3 = Node {name = "c"; header = "c1"; body = ref "c2"; children = [node1; node2; Nil]; meta = new tags} in
@@ -207,8 +239,48 @@ let test1 () =
   assert_equal (table#give_table ()) table2 
 
 
+let test_subword () =  
+  let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
+  let node2 = Node {name = "feuille"; header = "b1"; body = ref "b2"; children = [Nil]; meta = new tags} in 
+  let node3 = Node {name = "insecte"; header = "c1"; body = ref "c2"; children = [node1; node2; Nil]; meta = new tags} in
+  let table = new table in
+  table#fill_table [node3];
+  let table2 = Hashtbl.create 50 in
+  let table3 = Hashtbl.create 50 in
+  Hashtbl.add table2 "arbre" (ref node1);
+  Hashtbl.add table3 "feuille" (ref node2);
+  Hashtbl.add table3 "insecte" (ref node3);
+  assert_equal( table#potential_name "a" ) table2;
+  assert_equal( table#potential_name "ie") table3
+
+let test_subword2 () =  
+  let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
+  let node2 = Node {name = "arbre"; header = "b1"; body = ref "b2"; children = [Nil]; meta = new tags} in 
+  let node3 = Node {name = "insecte"; header = "c1"; body = ref "c2"; children = [node1; node2; Nil]; meta = new tags} in
+  let table = new table in
+  let table2 = Hashtbl.create 50 in
+  table#fill_table [node3];
+  Hashtbl.add table2 "arbre" (ref node1);
+  Hashtbl.add table2 "arbre" (ref node2);
+  assert_equal( table#potential_name "arbre") table2
+
+
+let test_read_write_file () =
+  let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
+  let node2 = Node {name = "feuille"; header = "b1"; body = ref "b2"; children = [Nil]; meta = new tags} in 
+  let node3 = Node {name = "insecte"; header = "c1"; body = ref "c2"; children = [node1; node2; Nil]; meta = new tags} in 
+  let c_ast = [node3;node1] in
+  let name_file = "love" in
+  to_file name_file c_ast;
+  let c_ast2 = (main_from_file name_file)#ast in
+  assert_equal (List.length c_ast2) 2;
+  assert_equal (c_equal c_ast2 c_ast) true
+
 
 let unittests ()=
   "Miscs">:::[
-    "Test1:">::(function _-> test1())
+    "Test_fill_table:">::(function _-> test_fill_table());
+    "Test_subword:">::(function _-> test_subword());
+    "Test_subword2:">::(function _-> test_subword2());
+    "Test_read_write_file:">::(function _-> test_read_write_file())
   ]
