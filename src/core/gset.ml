@@ -22,6 +22,7 @@ class ['a] tags = object(self)
 
 
   val tag_htbl: (string,'a tag) Hashtbl.t = Hashtbl.create 4
+  method get_tag = tag_htbl
   method get_value str =
     try
       Some (Hashtbl.find tag_htbl str)
@@ -29,13 +30,13 @@ class ['a] tags = object(self)
     |Not_found -> None
 
   method add_tag name values =
-    Hashtbl.replace tag_htbl name values
+    Hashtbl.add tag_htbl name values
 
   method private to_string_aux values =
     List.fold_left (fun prec -> function
     | TStr(x) -> prec ^ ", " ^ "S : " ^ x
     | TRef(a) -> prec ^ ", " ^ "Ref : " ^ a#name
-    | TDepend _ -> "" (*[Alice] TODO*)
+    | TDepend _ -> "" 
     ) "" values
 
 
@@ -56,22 +57,11 @@ class ['a] tags = object(self)
   method to_file name_file =
     output_string name_file "tags :\n";
     Hashtbl.iter (fun _ values -> (self#to_file_aux values name_file)) tag_htbl
-(*
-  method private from_file_aux values name_file =
-    List.iter (fun prec -> begin
-    match prec with
-    | TStr(x) -> output_string name_file ("string :"^x^"\n")
-    | _ -> () (*[Reb] TODO*)
-    end
-    ) values
 
+  method equal (tags:'a tags) = 
+    tag_htbl = (tags#get_tag)
+    
 
-  method rec from_file name_file =
-   let str = intput_string name_file in
-   if str = "tags :\n" then from_file name_file
-    Hashtbl.iter (fun _ values -> (self#to_file_aux values name_file)) tag_htbl
-
-*)
 end
 
 and ['a] set (name_tmp:string) = object(self)
@@ -81,13 +71,10 @@ and ['a] set (name_tmp:string) = object(self)
   val mutable children = []
   method children = children
 
-  method tags_sys : 'a tags = new tags
-  method tags_usr : 'a tags = new tags
   method add_child (child: 'a) = children <- child::children
 
   method name = name_tmp
 
-  (*[Alice] You never use the to_string method of tags. Is this normal?*)
   method to_string = match children with
   | [] -> "E(" ^ self#name ^ ")"
   | a::b -> "S:" ^ self#name ^ "(" ^ a#to_string ^ ((List.fold_left (fun a b -> a ^ "," ^ b#to_string) "" b)) ^ ")"
