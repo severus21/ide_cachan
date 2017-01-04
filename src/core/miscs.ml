@@ -100,6 +100,9 @@ let to_file name_file c_ast =
           Printf.fprintf file "%S\n" node.header;
           Printf.fprintf file "body:\n"; 
           Printf.fprintf file "%S\n" (! (node.body));
+          Printf.fprintf file "Tags\n"; 
+          node.meta#to_file file;
+          Printf.fprintf file "FTags\n";
           Printf.fprintf file "children:\n";
           Printf.fprintf file "Ast:\n";
           List.iter (to_file_aux file) node.children;
@@ -115,9 +118,9 @@ let to_file name_file c_ast =
     close_out file
 
 
+(** Read in a File the description of the c_ast and create the c_ast associated *)
 
 
-(** Write into a File the description of the c_ast*)
 
 let from_file_name name name_file =
   let word = Scanf.bscanf name_file "%s " (fun x -> x) in
@@ -125,12 +128,26 @@ let from_file_name name name_file =
   Scanf.bscanf name_file "%S " (fun x-> x)
 
 
-(** Read in a File the description of the c_ast and create the c_ast associated *)
-
+let from_file_meta name_file =
+  let word = Scanf.bscanf name_file "%s " (fun x -> x) in
+  if word <> "Tags" then raise Not_compliant;
+  let tags = new tags in
+  let rec aux name l = 
+    let word = Scanf.bscanf name_file "%s "  (fun x->x) in
+    match word with
+    | "FTags" -> tags 
+    | "Name:" -> 
+      let name = try Scanf.bscanf name_file "%S "  (fun x->x) with Scanf.Scan_failure _ -> raise Not_compliant in
+      aux name [] 
+   | "TStr:" -> aux name (TStr (Scanf.bscanf name_file "%S "  (fun x->x))::l) 
+    | "FName"->(tags#add_tag name (List.rev l); aux "" []) 
+    |_-> raise Not_compliant
+  in 
+  aux "" []
 
 
 let rec from_file_children name_file fin =
-  let word = Scanf.bscanf name_file "%s " (fun x->x) in
+  let word = Scanf.bscanf name_file " %s " (fun x->x) in
   if word <> "children:" then raise Not_compliant;
   let l = from_file_c_node name_file in
   let word,word2,word3 = Scanf.bscanf name_file "%s %s %d " (fun x y z->(x,y,z)) in
@@ -143,9 +160,10 @@ let rec from_file_children name_file fin =
 and from_file_node name_file fin =
   let name = (from_file_name "name:" name_file) in
   let header = (from_file_name "header:" name_file) in
-  let body = ref (from_file_name "body:" name_file) in
+  let body = ref (from_file_name "body:" name_file) in 
+  let meta = from_file_meta name_file in
   let children = from_file_children name_file fin in
-  {name = name; header = header; body = body ;children = children; meta = new tags} 
+  {name = name; header = header; body = body ;children = children; meta = meta} 
 
 
 
@@ -265,8 +283,15 @@ let test_subword2 () =
   assert_equal( table#potential_name "arbre") table2
 
 
-let test_read_write_file () =
-  let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
+let test_read_write_file () = 
+  let meta = new tags in
+  let tag1 = TStr "chat" in
+  let tag2 = TStr "chien" in
+  let tag3 = TStr "souris" in  
+  let tag4 = TStr "chaise" in
+  meta#add_tag "animaux" [tag1;tag2;tag3] ;
+  meta#add_tag "meuble" [tag4];
+  let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = meta} in 
   let node2 = Node {name = "feuille"; header = "b1"; body = ref "b2"; children = [Nil]; meta = new tags} in 
   let node3 = Node {name = "insecte"; header = "c1"; body = ref "c2"; children = [node1; node2; Nil]; meta = new tags} in 
   let c_ast = [node3;node1] in
@@ -282,5 +307,5 @@ let unittests ()=
     "Test_fill_table:">::(function _-> test_fill_table());
     "Test_subword:">::(function _-> test_subword());
     "Test_subword2:">::(function _-> test_subword2());
-    "Test_read_write_file:">::(function _-> test_read_write_file())
+    "Test_read_write_file:">::(function _-> test_read_write_file()) ;
   ]

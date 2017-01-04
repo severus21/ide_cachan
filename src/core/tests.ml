@@ -1,4 +1,4 @@
 open OUnit2
 
 let unittests ()=
-    "Core">:::[Miscs.unittests()]
+    "Core">:::[Miscs.unittests();Gset.unittests()]
