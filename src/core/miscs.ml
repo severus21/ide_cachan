@@ -1,7 +1,7 @@
 open Gset
 
 
-(*Manque pour les tags*)
+
 
 (** Returns whether a is a subword of b *)
 let is_subword a b =
