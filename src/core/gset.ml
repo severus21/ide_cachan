@@ -1,3 +1,4 @@
+(** Tags *)
 type 'a tag_element =
 | TStr of string
 | TRef of 'a
@@ -8,14 +9,16 @@ type 'a tag =  'a tag_element list;;
 
 
 
-
+(** To print the object *)
 class virtual toStringable = object
   method virtual to_string:string
 end
 
 
 
-
+(** Class tags *)
+(** Methods : add a element, get a value, print a tags, equality between two 
+** tags*)
 
 class ['a] tags = object(self)
   inherit toStringable
@@ -45,24 +48,30 @@ class ['a] tags = object(self)
     Hashtbl.iter (fun _ values -> s := !s^(self#to_string_aux values)) tag_htbl;
     !s
 
-  method private to_file_aux values name_file =
+  method private to_file_aux name values name_file =
+    Printf.fprintf name_file "Name:\n";
+    Printf.fprintf name_file "%S\n" name;
     List.iter (fun prec -> begin
     match prec with
-    | TStr(x) -> output_string name_file ("string :"^x^"\n")
-    | _ -> () (*[Reb] TODO*)
+    | TStr(x) ->  Printf.fprintf name_file "TStr: %S\n" x
+    | _ -> ()  
     end
-    ) values
+    ) values;
+    Printf.fprintf name_file "FName\n"
 
 
-  method to_file name_file =
-    output_string name_file "tags :\n";
-    Hashtbl.iter (fun _ values -> (self#to_file_aux values name_file)) tag_htbl
+  method to_file name_file =  
+    Hashtbl.iter (fun name values -> (self#to_file_aux name values name_file)) tag_htbl
 
   method equal (tags:'a tags) = 
     tag_htbl = (tags#get_tag)
     
 
 end
+
+(** Class set *)
+(** Methods : add a element, print a set*)
+
 
 and ['a] set (name_tmp:string) = object(self)
 
@@ -82,7 +91,37 @@ end
 
 
 
-type gset = gset set;;
+type gset = gset set
 
 
+(**Tests*)
+open OUnit2
 
+let test_add_child_set ()=
+  let set1 = new set("maison") in
+  let set2 = new set ("piscine") in
+  let set3 = new set("jardin") in
+  let set4 = new set("vitre") in
+  set1#add_child set4;
+  set3#add_child set2;
+  set1#add_child set3;
+  assert_equal(set3#children) [set2];
+  assert_equal(set1#children) [set3;set4]
+
+
+let test_add_child_tags ()= 
+  let tags = new tags in
+  let tag1 = TStr "chat" in
+  let tag2 = TStr "chien" in
+  let tag3 = TStr "souris" in  
+  let tag4 = TStr "chaise" in
+  tags#add_tag "animaux" [tag1;tag2;tag3] ;
+  tags#add_tag "meuble" [tag4];
+  assert_equal(Hashtbl.find tags#get_tag  "animaux") [tag1;tag2;tag3] ;
+  assert_equal(Hashtbl.length tags#get_tag) 2
+
+let unittests ()=
+  "Gset">:::[
+    "Test_add_child_set:">::(function _-> test_add_child_set());
+    "Test_add_child_tags:">::(function _-> test_add_child_tags())
+  ]

@@ -19,6 +19,7 @@ let confirm_quit () =
 ;;
 
 
+(** This function is the actual main function, that handles the gui loop *)
 let main () =
     let window = GWindow.window ~resizable:true ~width:1280 ~height:720
                                     ~title:"Awesome Ocaml IDE"
@@ -31,20 +32,31 @@ let main () =
     ignore (window#connect#destroy ~callback: Main.quit);
 
     (* Import callback *)
+    (* This function opens a folder chooser dialog and imports the
+     * project there *)
     let import_callback () : unit =
         let file_chooser =
             GWindow.file_chooser_dialog ~parent:window
                                         ~action:`SELECT_FOLDER
                                         ~show:true () in
-        file_chooser#add_select_button "Open" `CLOSE;
+        file_chooser#add_select_button_stock `CANCEL `CANCEL;
+        file_chooser#add_select_button "Open" `SELECT_FOLDER;
         let _import () : unit =
             let path = match file_chooser#filename with
             | Some p -> p
             | None -> "No file"
             in
-            Printf.printf "%s\n" path
+            Printf.printf "Loading with first plugin at %s\n%!" path;
+            let plugin = List.hd (Plugins.Factory.get_plugins ()) in
+            ignore(plugin#path_to_c_ast path)
         in
-        ignore(file_chooser#connect#file_activated _import);
+        begin
+            match file_chooser#run () with
+            | `SELECT_FOLDER -> _import ()
+            | `CANCEL -> ()
+            | _ -> ()
+        end;
+        file_chooser#destroy ()
     in
 
     (* Menu bar *)
