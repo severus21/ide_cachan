@@ -1,8 +1,6 @@
 open Gset
 
 
-
-
 (** Returns whether a is a subword of b *)
 let is_subword a b =
     let current = ref 0 in
@@ -298,6 +296,7 @@ let test_read_write_file () =
   let name_file = "love" in
   to_file name_file c_ast;
   let c_ast2 = (main_from_file name_file)#ast in
+  Sys.remove name_file;
   assert_equal (List.length c_ast2) 2;
   assert_equal (c_equal c_ast2 c_ast) true
 
