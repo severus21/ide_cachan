@@ -1,10 +1,10 @@
-open Core.Gset
+open Core.Miscs
 
 (** This module provides a navlist, a miller-columns-type gui item *)
 
 (** This is an abstract class representing a list of subitems to be shown
   on the rightmost column of the GuiNavlist *)
-class virtual item_list (root:'a set) = object(self)
+class virtual item_list (root:c_ast) = object(self)
     (* The methods to implement *)
     (** Name of the list, displayed in the center column *)
     method virtual name : string
@@ -15,12 +15,17 @@ class virtual item_list (root:'a set) = object(self)
     (* The base methods *)
     (** Applies f to all items and subitems of root *)
     method private iter f =
-        let rec _iter item =
-            match item#children with
-            | [] -> f item
-            | _  -> List.iter _iter item#children
+        let rec _iter (item:c_node) =
+            match item with
+            | Nil -> f item
+            | Node node ->
+                    begin
+                        match node.children with
+                        | [] -> f item
+                        | _  -> List.iter _iter node.children
+                    end
         in
-        _iter root
+        List.iter _iter root
 
     (** Returns a list of the subitems to show *)
     method get =
@@ -32,19 +37,21 @@ class virtual item_list (root:'a set) = object(self)
 end
 
 (** This sublcass of item_list shows all subitems *)
-class all_items (root:'a set) = object
+class all_items (root:c_ast) = object
     inherit item_list root
     method name = "- All -"
     method filter _ = true
 end
 
 (** This is the miller column type gui item to navigate the hierarchy *)
-class navlist ~packing ~root =
+class navlist ~packing =
     let hbox = GPack.hbox ~packing () in
     (* This function tells the column view how to render sets *)
-    let gset_data_func renderer column (model:GTree.model) iter =
-        let set:gset = model#get ~row:iter ~column in
-        renderer#set_properties [`TEXT set#name]
+    let c_node_data_func renderer column (model:GTree.model) iter =
+        let (node:c_node) = model#get ~row:iter ~column in
+        match node with
+        | Nil -> renderer#set_properties [`TEXT "nil"]
+        | Node n -> renderer#set_properties [`TEXT n.name]
     in
     (* This function tells the column view how to render an item_list *)
     let item_list_data_func renderer column (model:GTree.model) iter =
@@ -68,9 +75,9 @@ class navlist ~packing ~root =
     let _model1 = GTree.tree_store _cols
     and _model2 = GTree.list_store _cols
     and _model3 = GTree.list_store _cols in
-    let _view1 = make_view _model1 _col1 gset_data_func
+    let _view1 = make_view _model1 _col1 c_node_data_func
     and _view2 = make_view _model2 _col2 item_list_data_func
-    and _view3 = make_view _model3 _col3 gset_data_func in
+    and _view3 = make_view _model3 _col3 c_node_data_func in
     object(self)
         val cols = _cols
         val col1 = _col1
@@ -84,14 +91,17 @@ class navlist ~packing ~root =
         val view3 = _view3
 
         (** Sets the data in the hierarchy tree (leftmost column) *)
-        method private fill_tree (data:gset) =
+        method private fill_tree (data:c_ast) =
             model1#clear ();
-            let rec fill ?(parent:Gtk.tree_iter option) (value:gset) =
+            let rec fill ?(parent:Gtk.tree_iter option) (value:c_node) =
                 let iter = model1#append ?parent () in
                 model1#set ~row:iter ~column:col1 value;
-                List.iter (fun a -> fill ~parent:iter a) value#children
+                match value with
+                | Nil -> ()
+                | Node node -> List.iter (fun a -> fill ~parent:iter a)
+                                node.children
             in
-            fill data
+            List.iter fill data
 
         (** Sets the data in the method lists col (center column) *)
         method private fill_lists lists =
@@ -105,7 +115,7 @@ class navlist ~packing ~root =
         (** Sets the data in the methods col (rightmost column) *)
         method private fill_methods methods =
             model3#clear ();
-            let fill (value:gset) =
+            let fill (value:c_node) =
                 let iter = model3#append () in
                 model3#set ~row:iter ~column:col3 value
             in
@@ -128,7 +138,7 @@ class navlist ~packing ~root =
                 model1#get ~row ~column:col1
             in
             (match selection#get_selected_rows with
-            | [p] -> self#fill_lists [(new all_items (get p):> item_list)]
+            | [p] -> self#fill_lists [(new all_items [get p]:> item_list)]
             | []  -> ()
             | _   -> assert false);
             let first_list = model2#get_iter_first in
@@ -156,13 +166,15 @@ class navlist ~packing ~root =
                 model3#get ~row ~column:col3
             in
             match selection#get_selected_rows with
-            | [p] -> Printf.printf "%s\n" ((get p)#to_string)
+            | [p] -> ignore(get p) (* Do smth *)
             | []  -> ()
             | _   -> assert false
 
+        method set_root (root:c_ast) : unit =
+            self#fill_tree root
+
         (** Fill in the leftmost column tree and connect events *)
         initializer
-            self#fill_tree root;
             ignore(view1#selection#connect#changed
                 ~callback:self#item_selected);
             ignore(view2#selection#connect#changed

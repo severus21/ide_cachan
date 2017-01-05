@@ -31,47 +31,12 @@ let main () =
     );
     ignore (window#connect#destroy ~callback: Main.quit);
 
-    (* Import callback *)
-    (* This function opens a folder chooser dialog and imports the
-     * project there *)
-    let import_callback () : unit =
-        let file_chooser =
-            GWindow.file_chooser_dialog ~parent:window
-                                        ~action:`SELECT_FOLDER
-                                        ~show:true () in
-        file_chooser#add_select_button_stock `CANCEL `CANCEL;
-        file_chooser#add_select_button "Open" `SELECT_FOLDER;
-        let _import () : unit =
-            let path = match file_chooser#filename with
-            | Some p -> p
-            | None -> "No file"
-            in
-            Printf.printf "Loading with first plugin at %s\n%!" path;
-            let plugin = List.hd (Plugins.Factory.get_plugins ()) in
-            ignore(plugin#path_to_c_ast path)
-        in
-        begin
-            match file_chooser#run () with
-            | `SELECT_FOLDER -> _import ()
-            | `CANCEL -> ()
-            | _ -> ()
-        end;
-        file_chooser#destroy ()
-    in
-
     (* Menu bar *)
     let menubar = GMenu.menu_bar ~packing:vbox#pack () in
     let factory = new GMenu.factory menubar in
     let accel_group = factory#accel_group in
     let file_menu = factory#add_submenu "File" in
     let edit_menu = factory#add_submenu "Edit" in
-
-    (* File menu *)
-    let factory = new GMenu.factory file_menu ~accel_group in
-    ignore(factory#add_item "Import" ~key:_I ~callback: import_callback);
-    ignore(factory#add_item "Export" ~key:_E ~callback: notimp_callback);
-    ignore(factory#add_item "Quit" ~key:_Q
-        ~callback: (fun () -> if confirm_quit () then Main.quit ()));
 
     let test_set =
         let a = new Gset.set("A")
@@ -90,7 +55,44 @@ let main () =
         ~callback: (fun () -> ignore(GuiFindDialog.find_dialog window test_set)));
 
     (* Navlist *)
-    ignore(new GuiNavlist.navlist ~packing:vbox#add ~root:test_set);
+    let navlist = new GuiNavlist.navlist ~packing:vbox#add in
+
+    (* Import callback *)
+    (* This function opens a folder chooser dialog and imports the
+     * project there *)
+    let import_callback () : unit =
+        let file_chooser =
+            GWindow.file_chooser_dialog ~parent:window
+                                        ~action:`SELECT_FOLDER
+                                        ~show:true () in
+        file_chooser#add_select_button_stock `CANCEL `CANCEL;
+        file_chooser#add_select_button "Open" `SELECT_FOLDER;
+        let _import () : unit =
+            let path = match file_chooser#filename with
+            | Some p -> p
+            | None -> "No file"
+            in
+            Printf.printf "Loading with first plugin at %s\n%!" path;
+            let plugin = List.hd (Plugins.Factory.get_plugins ()) in
+            let ast = plugin#path_to_c_ast path in
+            Core.Miscs.print_c_ast (fst ast);
+            navlist#set_root (fst ast)
+        in
+        begin
+            match file_chooser#run () with
+            | `SELECT_FOLDER -> _import ()
+            | `CANCEL -> ()
+            | _ -> ()
+        end;
+        file_chooser#destroy ()
+    in
+
+    (* File menu *)
+    let factory = new GMenu.factory file_menu ~accel_group in
+    ignore(factory#add_item "Import" ~key:_I ~callback: import_callback);
+    ignore(factory#add_item "Export" ~key:_E ~callback: notimp_callback);
+    ignore(factory#add_item "Quit" ~key:_Q
+        ~callback: (fun () -> if confirm_quit () then Main.quit ()));
 
     (* Frame *)
     let frame = GBin.frame ~label:"Code" ~packing:vbox#add () in
