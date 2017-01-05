@@ -15,6 +15,20 @@ You will need the `lablgtk` and `ounit` modules and `ocamlbuild`
 opam install lablgtk ounit ocamlbuild
 ```
 
+```bash
+make release
+./ide.release
+```
+## Doc
+To build doc, run
+
+```bash
+make doc
+```
+
+The documentation of the ide can be found in ```ide.docdir/index.html```
+The documentation of the plugins can be found in ```plugins/a_plugin/doc/index.html```
+
 ## Adding a new subdir in D1/../Dn
 ```
 mkdir D1/../Dn/subdir

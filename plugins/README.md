@@ -25,6 +25,3 @@ let () =
 You will need a makefile with ```default```, ```clean``` and ```doc``` targets that output a
 ```plugin.cmxa``` file (with ```-shared``` passed to ```ocamlopt```).
 #### TL;DR : copy Makefile from the ocaml plugin, should work as-is
-
-## Adding tests for alpha language /!\ Plugin tests not integrated yet /!\
-TODO
