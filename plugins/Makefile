@@ -5,20 +5,20 @@ PLUGINS=$(addsuffix plugin.cmxs,$(DIRS))
 default: $(PLUGINS)
 
 %/plugin.cmxs:
-	cd $* && make
-	-rm $*.cmxs
-	cp $@ $*.cmxs
+	@cd $* && make
+	@rm -f $*.cmxs
+	@cp $@ $*.cmxs
 
 clean_%:
-	cd $* && make clean
+	@cd $* && make clean
 
 tests: 
-	cd $* && make tests
+	@cd $* && make tests
 
 clean: $(addprefix clean_,$(DIRS))
-	-rm *.cmxs
+	@rm -f *.cmxs
 
 doc_%:
-	cd $* && rm -rf doc && make doc
+	@cd $* && rm -rf doc && make doc
 
 doc: $(addprefix doc_,$(DIRS))

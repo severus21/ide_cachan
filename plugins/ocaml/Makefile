@@ -19,13 +19,17 @@ default: plugin.cmxs
 all: depend
 
 clean:
-	-rm *.cmx *.cmi
-	-rm plugin.cmxs
+	@rm -f *.cmx *.cmi *.o
+	@rm -f plugin.cmxs
+
+mrproper: clean
+	@rm -rf doc
 
 .PHONY: doc
 
 doc: plugin.cmxs
-	-mkdir doc
+	@rm -rf doc
+	@mkdir doc
 	ocamlfind ocamldoc $(PACKAGES) $(INCLUDES) -html -d doc/ *.mli
 
 %.cmi: %.mli
