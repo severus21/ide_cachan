@@ -1,4 +1,7 @@
-(**Define the tags and the sets *)
+(**Define the tags and the sets : 
+   - the sets correspond to a part of file
+   - the tags indicate the attributs or information about a set
+*)
 
 
 (**Type to create a tag element*)
@@ -19,8 +22,7 @@ end
 
 
 
-(** Class tags --
-    Methods : add a element, get a value, print a tags, equality between two tags*)
+(** Class tags*)
 class ['a] tags :object  
   inherit toStringable
   constraint 'a = < name : string; .. >
@@ -32,18 +34,21 @@ class ['a] tags :object
   method to_file : out_channel -> unit
   method private to_file_aux :
     string -> 'a tag -> out_channel -> unit
+  
+  (**Print a tags*)
   method to_string : string
   method private to_string_aux : 'a tag -> string
 end
 
-(** Class set --
-    Methods : add a element, print a set*)
+(** Class set *)
 and ['a] set : string -> object
   constraint 'a = < to_string : string; .. >
   val mutable children : 'a list
   method add_child : 'a -> unit
   method children : 'a list
-  method name : string
+  method name : string 
+  
+  (**Print a set*)
   method to_string : string
 end
 
