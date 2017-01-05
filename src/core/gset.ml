@@ -1,10 +1,13 @@
-(** Tags *)
+(**Define the tags and the sets *)
+
+
+(**Type to create a tag element*)
 type 'a tag_element =
 | TStr of string
 | TRef of 'a
 | TDepend of string list;;
 
-
+(**Type to create a tag *)
 type 'a tag =  'a tag_element list;;
 
 
@@ -16,10 +19,8 @@ end
 
 
 
-(** Class tags *)
-(** Methods : add a element, get a value, print a tags, equality between two 
-** tags*)
-
+(** Class tags 
+    Methods : add a element, get a value, print a tags, equality between two tags*)
 class ['a] tags = object(self)
   inherit toStringable
 
@@ -69,10 +70,8 @@ class ['a] tags = object(self)
 
 end
 
-(** Class set *)
-(** Methods : add a element, print a set*)
-
-
+(** Class set 
+    Methods : add a element, print a set*)
 and ['a] set (name_tmp:string) = object(self)
 
   inherit toStringable
