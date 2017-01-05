@@ -16,6 +16,7 @@ opam install lablgtk ounit ocamlbuild
 ```
 
 ```bash
+make plugins
 make release
 ./ide.release
 ```

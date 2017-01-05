@@ -92,6 +92,19 @@ let rec ptyp_to_tl name {ptyp_desc=desc;_}=
 
         Tl_constraint( name, String.trim( value^" "^tmp)) 
     )
+    |Ptyp_class(lg_ident, next) -> (
+        let constraints = List.map (function x->ptyp_to_tl "" x) next in
+        let tmp = List.fold_left (fun str x->if str <> "" then str^"."^x else x) 
+            "" (Longident.flatten lg_ident.txt) in
+        let value = List.fold_left (fun (value:string) (tl:tl_struct)->(
+            match tl with 
+                |Tl_constraint(_, v)->value^" "^v
+                |Tl_none -> value
+                |_->not_define "Bad ast"
+        )) "" constraints in          
+
+        Tl_constraint( name, String.trim( value^" #"^tmp)) 
+    )
     |Ptyp_arrow (_,c_t1,c_t2) -> (
         match ptyp_to_tl name c_t1, ptyp_to_tl name c_t2 with   
         |Tl_constraint(_,v1), Tl_constraint(_,v2)->
@@ -810,6 +823,8 @@ let structures ()=
         ("tuple", ml_tuple_constraint, Tl_constraint("extract",
             "string * int"));
         ("polymorphic", "val x : int -> 'a", Tl_constraint("x", "int -> 'a"));
+        ("ptyp_class0", "val find : #GW.w -> unit", Tl_constraint("find", "#GW.w -> unit"));
+        ("ptyp_class1", "val find : int #GW.w -> unit", Tl_constraint("find", "int #GW.w -> unit"));
     ]);
 ]
 
