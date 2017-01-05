@@ -32,3 +32,6 @@ plugins/*/doc
 oUnit*
 ide.docdir
 love
+
+# Vim
+**.swp
