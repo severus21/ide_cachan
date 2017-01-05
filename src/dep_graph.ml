@@ -1,6 +1,7 @@
 (** Ce programme est appelé par GUI avec pour argument la liste des modules pour lesquels l'utilisateur veut des infos **)
 (** Pour la compilation avec ocamlc, faire 'ocamlc graphics.cma nom_du_fichier.ml' **)
 open Graphics
+open Core.Miscs
 
 
 
@@ -12,23 +13,10 @@ open Graphics
 let black = rgb 0 0 0 (* contour des rectangles *)
 let red = rgb 238 0 0 (* texte *)
 let violet = rgb 208 32 144 (* flèches *)
-let lite_blue = rgb 240 248 255 (* intérieur des  rectangles *)
+let lite_blue = rgb 240 248 255 (* intérieur des rectangles *)
 
-(* cette fonction sera appelée par la GUI probablement *)
-let set_size w h = w,h
-
-(* on définit la hauteur, la largeur, le diametre et le centre du cercle sur lequel seront positionnés les noeuds *)
-let width_i,height_i = set_size 1200 750
-let width_f = float_of_int width_i
-let height_f = float_of_int height_i
-let diam = float_of_int (min width_i height_i) -. 20.
-let ray = diam /. 2.
-let center = (width_f /. 2.) , (height_f /. 2.)
-
-(* on construit les chaines de caractères correspondant à la largeur et à la hauteur *)
-let width_s = string_of_int width_i
-let height_s = string_of_int height_i
-
+(* le message d'erreur quand on n'a pas cliqué sur un module *)
+let err_mess = "try to click on a box"
 
 
 
@@ -36,10 +24,52 @@ let height_s = string_of_int height_i
 (****** FONCTIONS PAS ENCORE CODEES ******)
 
 (* cette fonction va chercher (où ??) la liste des open faits dans le module en question *)
-let get_open modul = 
-    if modul = modul 
+let get_open modul open_list = snd (List.find (fun (x,y) -> x=modul) open_list)
+(*    if modul = modul 
     then [["Blub";"Blab";"toto"] ; ["tyty";"Blob"];["titi"]] 
     else [["Blub";"Blab";"toto"] ; ["tyty";"Blob"];["titi"]]
+*)
+
+(* c'est elle qui est bien mais en cours de construction *)
+let rec get_open_cast c_ast liste local_open =
+    match c_ast with
+    |[] -> liste , local_open
+    |c_node::q -> (
+        let new_l,new_open = get_open_cnode c_node q local_open in
+        get_open_cast q newl new_open
+    )
+
+
+and get_open_cnode c_node liste local_open = 
+    match c_node with
+    |Nil -> liste , local_open
+    |Node(node_int) -> (
+        let meta = node_int.meta in
+        let tag = meta#get_tag "plg_ast" in
+        match tag with
+        |[] -> liste , local_open 
+        |[Tstr("Tl_open")] -> liste , (node_int.name::local_open)
+        |[Tstr("Tl_var")] -> liste , local_open
+        |[Tstr("Tl_constraint")] -> liste , local_open 
+        |[Tstr("Tl_fun")] -> liste , local_open 
+        |[Tstr("Tl_exception")] -> liste , local_open 
+        |[Tstr("Tl_type")] -> liste , local_open 
+        |[Tstr("Tl_module")] -> (
+            let new_name = node_int.name in
+            let new_l,loc_open = get_open_cast (node_int.children) liste [] in
+            ((new_name,loc_open)::new_l) , []
+        )
+        |[Tstr("Tl_sign")] -> get_open_cast (node_int.children) liste local_open
+        |[Tstr("Tl_module_constraint")] -> (
+            let new_name = node_int.name in
+            let new_l,loc_open = get_open_cast (node_int.children) liste [] in
+            ((new_name,loc_open)::new_l) , []
+        )
+        |[Tstr("Tl_functor")] -> liste , local_open
+        |[Tstr("Tl_recmodule")] -> liste , local_open
+        |[Tstr("Tl_class")] ->  liste , local_open
+        |[Tstr("Tl_class_and")] -> liste , local_open
+    )
 
 
 
@@ -82,17 +112,6 @@ let give_areas modules center ray =
 
 (****** EXTRACTION DES DEPENDANCES REELLEMENT UTILES ******)
 
-(* convertie ['Toto';'Plop'] en 'Toto.Plop' *)
-let string_of_list l =
-	let rec aux l =
-        match l with
-		|[] -> ""
-		|t::q -> t ^ "." ^ aux q
-	in
-	let str = aux l in
-	let str = String.sub str 0 (String.length str -1) in 
-	str
-
 (* renvoie le booléen correspondant à la non emptyness de l'intersection de l1 et l2 *)
 let rec l1_in_l2 l1 l2 = match l1 with
   |[] -> false
@@ -104,8 +123,8 @@ let rec big_l1_in_l2 l1 l2 = match l1 with
 	|l::q -> if l1_in_l2 l l2 then l::(big_l1_in_l2 q l2) else big_l1_in_l2 q l2
 
 (* parmis les dépendances d'un module, ne garde que celles concernant un autre module parmis ceux fournis *)
-let get_useful_dep modul modules =
-	let l1 = get_open modul in
+let get_useful_dep modul modules open_list =
+	let l1 = get_open modul open_list in
 	big_l1_in_l2 l1 modules
 
 
@@ -150,19 +169,19 @@ let rec print_edges_two_mod dep_list m1 m2 areas = match dep_list with
 	|l::q -> (if List.exists (fun x -> x=m2) l then print_one_edge m1 m2 areas ; print_edges_two_mod q m1 m2 areas)
 
 (* dessine toutes les flèches des dépendances de modul *)
-let print_edge_module modul modules areas =
-	let open_list = get_useful_dep modul modules in
+let print_edge_module modul modules areas open_list =
+	let used_open = get_useful_dep modul modules open_list in
 	let rec aux mod_list = match mod_list with
 		|[] -> ()
-		|m::q -> if m<>modul then (print_edges_two_mod open_list modul m areas ; aux q) else aux q
+		|m::q -> if m<>modul then (print_edges_two_mod used_open modul m areas ; aux q) else aux q
 	in
 	aux modules
 
 (* dessine toutes les flèches *)
-let print_edges_complete modules areas = 
+let print_edges_complete modules areas open_list = 
 	let rec aux mod_list = match mod_list with
 		|[] -> ()
-		|m::q -> (print_edge_module m modules areas ; aux q)
+		|m::q -> (print_edge_module m modules areas open_list ; aux q)
 	in
 	aux modules
 
@@ -197,20 +216,35 @@ let print_boxes areas = List.iter print_box areas
 (****** GESTION DES CLICS UTILISATEURS ******)
 
 (* cette exception est lancée quand l'utilisateur clique sur une zones n'étant pas dans une box *)
-exception Not_in_a_box
+exception In_box of string
+
+let print_error pos mess =
+    let len = String.length mess in
+    let text_w,text_h = text_size mess in
+    moveto (fst pos - text_w/2) (snd pos - text_h/2) ;
+    for k = 0 to len-1 do
+        set_color (rgb 55 55 55) ;
+        draw_char (mess.[k]) ;
+    done
 
 (* renvoie vrai si pos est dans la zone définie par zone *)
 let is_in pos area = 
     let x_mouse,y_mouse = pos in
     let modul,(x,y) = area in
     let text_w,text_h = text_size modul in
-    (x_mouse >= (x-text_w/2 - 2)  &&  x_mouse <= (x+text_w/2 + 2)  &&  y_mouse >= (y+text_h/2 + 2)  &&  y_mouse <= (y+text_h/2 + 2))
+    (x_mouse >= (x-text_w/2 - 2)  &&  x_mouse <= (x+text_w/2 + 2)  &&  y_mouse >= (y-text_h/2 - 2)  &&  y_mouse <= (y+text_h/2 + 2))
 
 (* si l'utilisateur a cliqué dans une box, renvoie le nom de la box, sinon lève l'exception Not_in_a_box *)
-let rec get_module_name pos areas =
+let rec get_module_name pos areas err_mess =
     match areas with
-    |[] -> raise Not_in_a_box
-    |area::q -> if is_in pos area then (fst area) else get_module_name pos q
+    |[] -> print_error pos err_mess
+    |area::q -> if is_in pos area then (print_string "toto" ; raise (In_box(fst area))) else get_module_name pos q err_mess
+
+(* attend que l'utilisateur clique et renvoie le nom du module ou l'exception Not_in_a_box *)
+let wait_click areas err_mess =
+    let stat = wait_next_event [Button_down] in
+    let pos = stat.mouse_x , stat.mouse_y in
+    get_module_name pos areas err_mess
 
 
 
@@ -218,9 +252,9 @@ let rec get_module_name pos areas =
 
 (****** PARTIE ECRITURE ******)
 
-let modules = ["toto";"titi";"tyty";"tete";"jojo";"jyjy"]
-
-let dep_build modules width_i height_i =
+let dep_build cast width height =
+    let width_i = max (min width 1200) 300 in
+    let height_i = max (min height 800) 250 in
     let width_f = float_of_int width_i in
     let height_f = float_of_int height_i in
     let diam = float_of_int (min width_i height_i) -. 20. in
@@ -229,15 +263,19 @@ let dep_build modules width_i height_i =
     let width_s = string_of_int width_i in
     let height_s = string_of_int height_i in
 
+    let open_list,_ = get_open_cast cast [] [] in (* la grosse liste (string * string list) list *)
+    let modules = List.map (fun x,y -> x) liste in (* la liste de tous les modules du code *)
+
     let areas = give_areas modules center ray in
 
-
     open_graph (" " ^ width_s ^ "x" ^ height_s) ;
-    print_edges_complete modules areas ;
+    print_edges_complete modules areas open_list ;
     print_boxes areas ;
-    let stat = wait_next_event [Button_down] in
-    print_string "toto"
 
+
+     ( while true do wait_click areas err_mess done )
+(*    with In_box str -> str
+*)
 (*
-let () = main ["toto";"titi";"tyty";"tete";"jojo";"jyjy"] 1200 750
+let () = dep_build ["toto";"titi";"tyty";"tete";"jojo";"jyjy"] 1200 750
 *)
