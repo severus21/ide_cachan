@@ -6,6 +6,7 @@ open Tl_ast
     - When not_define afficher le nom de la structure non supportée
     - keep makefile, .mlpack and other datai when exporting, should be implemented in core not in plugins
     - use clean type to define entry and not the dirty implementation
+    - let () = ... -> Tl_var must be Tl_main (because it is not function in Parsetree.structure)
 *)  
 
 (* *** BEGIN Miscellaneous functions** *)
@@ -63,7 +64,7 @@ let open_description_to_string_list od =
     @return a Tl_struct describing the expression [Tl_fun|Tl_var] *) 
 let pexp_to_tl name body=function{pexp_desc=desc;_}->
     match desc with  
-    | Pexp_function _ | Pexp_fun _-> Tl_fun(name, body)   
+    | Pexp_function _ | Pexp_fun _ ->Tl_fun(name, body)   
     | _ -> Tl_var(name, body)   
 
    
@@ -352,10 +353,11 @@ let rec struct_to_tl_struct ml  = function{pstr_desc=struct_item;pstr_loc=loc}->
     match struct_item with 
     |Pstr_open open_desc ->  
         Tl_open(open_description_to_string_list open_desc.popen_lid, body)
-    |Pstr_value(_,  value::_)->((*pour l'instant on ne traite que la première*)
+    |Pstr_value(_,  value::t)->((*pour l'instant on ne traite que la première*)
         match value.pvb_pat.ppat_desc  with 
-        |Ppat_var {txt=name;_}-> pexp_to_tl name body value.pvb_expr
-        |_->Tl_none                  
+        |Ppat_var {txt=name;_}->pexp_to_tl name body value.pvb_expr
+        |Ppat_construct _-> pexp_to_tl "()" body value.pvb_expr
+          |_->Tl_none                  
     )
     |Pstr_exception {pext_name={txt=name;_};_}->
         Tl_exception( name, body)
@@ -698,7 +700,9 @@ let structures ()=
         ("default", "let f x = x", Tl_fun("f", "let f x = x"));
         ("function",  "let f = function x -> x", Tl_fun("f",
             "let f = function x -> x"));
-        ("fun", "let f = fun x y-> x+y", Tl_fun("f", "let f = fun x y-> x+y"))
+        ("fun", "let f = fun x y-> x+y", Tl_fun("f", "let f = fun x y-> x+y"));
+        ("main", "let () = Printf.printf \"e\"", 
+            Tl_var("()", "let () = Printf.printf \"e\""))
     ]);
     ("suite_exception", [
         ("default", "exception E of string", Tl_exception("E",
@@ -864,6 +868,7 @@ let ml_strs = [
     ]
 
 let export_suite()=
+
     "export">:::[
         "path_to_name">:::[
             "default">::(function _->( assert_equal
@@ -899,5 +904,6 @@ let export_suite()=
 
     ]
 
-let unittests () = "Tl_ast">:::[import_suite (); export_suite ()]
+let unittests () =
+  "Tl_ast">:::[import_suite (); export_suite ()]
 
