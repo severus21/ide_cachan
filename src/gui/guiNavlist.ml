@@ -1,7 +1,9 @@
 open Core.Gset
 
+(** This module provides a navlist, a miller-columns-type gui item *)
+
 (** This is an abstract class representing a list of subitems to be shown
- * on the rightmost column of the GuiNavlist *)
+  on the rightmost column of the GuiNavlist *)
 class virtual item_list (root:'a set) = object(self)
     (* The methods to implement *)
     (** Name of the list, displayed in the center column *)
@@ -36,7 +38,7 @@ class all_items (root:'a set) = object
     method filter _ = true
 end
 
-(* This is the miller column type gui item to navigate the hierarchy *)
+(** This is the miller column type gui item to navigate the hierarchy *)
 class navlist ~packing ~root =
     let hbox = GPack.hbox ~packing () in
     (* This function tells the column view how to render sets *)
