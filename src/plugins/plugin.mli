@@ -17,19 +17,19 @@ file_extensions:string list list; (**
 
 path_to_c_ast:string->c_ast * string list;(**
     Construct a c_ast from a file or a directory
-    @param path, this is the path dir or the file location
+    - param1 path, this is the path dir or the file location
     @return the c_ast related to path and a list of all files which are not used
         by the plugin*)
 
 string_to_c_ast:string->c_ast;(**
     Construct a c_ast from file
-    @param str string of file
+    - param1 str string of file
     @return the c_ast related to file*)
 
 c_ast_to_folder:string->c_ast->unit;(**
     Export a c_ast into a folder, ready for compilation/execution
-    @param path : path of the folder
-    @param ast : c_ast to export
+    - param1 path : path of the folder
+    - param2 ast : c_ast to export
     @return the string(ocaml code) related to ast*)
 
 unittests:unit->OUnit2.test(**

@@ -1,4 +1,7 @@
 src/plugins/Factory
+src/plugins/Extract
+src/plugins/Plugin
+src/plugins/Tests
 
 src/core/Gset
 src/core/Miscs

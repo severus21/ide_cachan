@@ -4,8 +4,8 @@
 
 
 (** Scan recursively a directory, and aggregate file according rules
-    @param path - path of the parent dir 
-    @param rules -
+    - param1 path - path of the parent dir 
+    - param2 rules -
     @return entries, not_used_files
         entries :string list list list, 
             ieme elemt <->rule i => list of entry matching the rule i 
@@ -18,7 +18,7 @@
 val extract_from_rules : string -> string list list -> string list list list * string list
 
 (** Pretty printing for list of entries
-    @param a list of entries*)      
+    - param1 a list of entries*)      
 val print : string list list list -> unit 
 
 (** Generate unittests for this module*)                                       

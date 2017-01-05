@@ -1,6 +1,6 @@
 
 (** Used by plugins to register themselves
-    @param the plug reprensenting the plugin to register *)
+    - param1 the plug reprensenting the plugin to register *)
 val register_plugin : Plugin.plug -> unit
 
 (** Returns the list of currently loaded plugins

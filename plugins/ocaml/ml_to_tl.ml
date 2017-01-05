@@ -20,7 +20,7 @@ let print_ast ast =
     Printast.implementation (Format.formatter_of_out_channel stdout) ast
 
 (** Returns the substring corresponding to the Location loc 
-    @param ml - the ocaml code (string)
+    param1 ml - the ocaml code (string)
     @param loc - the Location.t
     @return extract a sub-string of ml defined by loc*)
 let get_str_from_location ml = function {Location.loc_start = s ; loc_end = e; 
