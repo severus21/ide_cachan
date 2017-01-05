@@ -21,30 +21,35 @@ val print_ast : Parsetree.structure_item list -> unit
     @param p as (rule_number, entries) where entries are a list of relation
         a relation is a list of files
     @return the tl_ast related to entries
-  *)
+    @raise Not_define if num_rules is not valid*)
 val entries_to_tl_ast : string -> int * string list list -> tl_ast
 
 (** Transform  a string containing some ml code into a tl_ast
     @param str string representing a piece of caml code
-    @return the tl_ast related to str*)
+    @return the tl_ast related to str
+    @raise Not_define if there is an unkown ocaml structure*)
 val str_to_tl_ast: string -> tl_ast
 
 (** Transform  a string containing some ml code into a tl_struct,
     used mainly for testing
     @param str string representing a piece of caml code
-    @return the first tl_structure of the tl_ast related to str*)
+    @return the first tl_structure of the tl_ast related to str
+    @raise Not_define if there is an unkown ocaml structure*)
 val str_to_tl_struct: string -> tl_struct
 
 
 (** Converts a top-level ast to a string
     @param ast a tl_ast
-    @return the caml code related to ast*)
+    @return the caml code related to ast
+    @raise Failwith if Tl_ast.tl_ast represents a corrupter ocaml code*)   
 val tl_ast_to_str : tl_ast -> string
 
 
 (** Export a top-level ast into a caml folder
     @param path of the folder
-    @param ast a tl_ast, where roots are Tl_module,Tl_sig, and Tl_module_constrainte describing files*)
+    @param ast a tl_ast, where roots are Tl_module,Tl_sig, 
+    and Tl_module_constrainte describing files
+    @raise Failwith if Tl_ast.tl_ast represents a corrupter ocaml code*)   
 val tl_ast_to_folder : string->tl_ast -> unit
 
 (** Prints a tl_ast, for debbuging purposes

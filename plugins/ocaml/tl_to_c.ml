@@ -20,7 +20,8 @@ let ptr = let db = Hashtbl.create 1024 in fun (np:string) (x:string)->
 (** Transform a Tl_ast.class_element to c_ast node
     @param np - namespace of the file
     @param cl_elmt - Tl_ast.class_element
-    @return a list of Core.misc.c_ast*)
+    @return a list of Core.misc.c_ast
+    @raise Bad_tl_ast if the cl_elmt represents a corrupted ocaml code*)
 let rec cl_elmt_to_core (np:string) cl_elmt=
     let meta = new tags in 
     match cl_elmt with  
@@ -98,7 +99,8 @@ let rec cl_elmt_to_core (np:string) cl_elmt=
 (** Transform a Tl_ast.tl_struct to Core.Misc.c_ast node
     @param np - namespace of the file
     @param tl_struct - Tl_ast.tl_struct
-    @return a list of Core.misc.c_ast*)
+    @return a list of Core.misc.c_ast
+    @raise Bad_tl_ast if tl_struct represents a corrupted ocaml code*)
 and tl_struct_to_core np tl_struct=
     let meta = new tags in
     match tl_struct with
@@ -253,18 +255,25 @@ and tl_struct_to_core np tl_struct=
 (** Transform a Tl_ast.tl_ast to Core.Misc.c_ast node
     @param np - namespace of the file
     @param tl_ast - Tl_ast.tl_ast
-    @return a list of Core.misc.c_ast*)
+    @return a list of Core.misc.c_ast
+    @raise Bad_tl_ast if tl_ast represents a corrupted ocaml code*)
 and _tl_ast_to_c_ast np = function tl_ast -> 
     List.concat (List.map (tl_struct_to_core np) tl_ast)
 
-(** *)      
+(** Transform a Tl_ast.tl_ast to Core.Misc.c_ast node,
+    external version of _tl_ast_to_c_ast
+    @param tl_ast - Tl_ast.tl_ast
+    @return a list of Core.misc.c_ast
+    @raise Bad_tl_ast if tl_ast represents a corrupted ocaml code*)     
 let tl_ast_to_c_ast = _tl_ast_to_c_ast ""
 
 (* *** BEGIN *)
 
 (** Transform a Core.misc.c_ast representing a ocaml type 
     @param - Core.Misc.internal_node
-    @return string representing the type*) 
+    @return string representing the type
+    @raise Not_define if internal_node represents 
+    a corrupted ocaml code*)
 let c_type_to_tl_type =function
 |Nil->not_define "Bad core node for type_leaf"
 |Node node->(    
@@ -277,7 +286,9 @@ let c_type_to_tl_type =function
     Usefull for spliting type definition from implementation,
     in a Tl_module_constraint for instance.
     @param prefix - a string used to separate nodes
-    @return two sublists (type nodes, implem nodes)*)
+    @return two sublists (type nodes, implem nodes)
+    @raise Not_define if internal_node represents 
+    a corrupted ocaml code*)
 let rec split_c_constraint prefix=function
 |[]-> [], []   
 |Nil::_-> not_define "not def"
@@ -293,7 +304,9 @@ let rec split_c_constraint prefix=function
 
 (** Transform a Core.Misc.internal_node to Tl_ast.class_elmt
     @param - Core.Misc.internal_node
-    @return Tl_ast.class_elmt*)
+    @return Tl_ast.class_elmt
+    @raise Not_define if internal_node represents 
+    a corrupted ocaml code*)
 let rec c_ast_to_cl_elmt=function
 |Nil ->not_define "bas ast c_ast_to_cl_elmt" 
 |Node node->(  
@@ -329,7 +342,9 @@ let rec c_ast_to_cl_elmt=function
 
 (** Transform a Core.Misc.internal_node to Tl_ast.Tl_struct
     @param - Core.Misc.internal_node
-    @return Tl_ast.Tl_struct*)
+    @return Tl_ast.Tl_struct
+    @raise Not_define if internal_node represents 
+    a corrupted ocaml code*)
 and c_node_to_tl_ast=function
 |Nil -> Tl_none
 |Node node->(          
@@ -391,7 +406,9 @@ and c_node_to_tl_ast=function
 
 (** Transform a Core.Misc.c_ast into a Tl_ast.tl_ast
     @param x - Core.Misc.c_ast(a list of nodes)
-    @return a Tl_ast.tl_ast*)
+    @return a Tl_ast.tl_ast
+    @raise Not_define if c_ast  represents 
+    a corrupted ocaml code*)
 and c_ast_to_tl_ast x= List.map c_node_to_tl_ast x
 
 open OUnit2

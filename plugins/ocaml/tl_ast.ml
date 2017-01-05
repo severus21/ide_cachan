@@ -2,10 +2,6 @@ exception Not_define of string
 let not_define msg = raise (Not_define( "src/tl_ast.ml : "^msg^"\n" )) 
 exception Bad_tl_ast of string
 let bad_tl_ast msg = raise (Bad_tl_ast( "src/tl_ast.ml : "^msg^"\n" )) 
-(** TODO
-  * extand class, module
-  *)
-
 
 type tl_visibility = Tl_private|Tl_public
  

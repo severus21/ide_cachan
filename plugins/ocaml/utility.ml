@@ -14,7 +14,6 @@ let rec mkdir dir _mod=
     in
         
     let next = Filename.dirname dir in
-    assert(next <> dir);
 
     if flag then(
         if next <> "." && next <> ".." && next <> "/" then mkdir next _mod;
