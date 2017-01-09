@@ -34,6 +34,14 @@ and c_node =
 and c_ast = c_node list 
 
 
+(**Class that contains the ast*)
+class ptr_ast (_ast:c_ast) = object
+  val p_ast = ref _ast
+    
+  method ast= !(p_ast)             
+
+end   
+
 
 
 (** Fill a hashtable with the name of the function and their c_node associated *)
@@ -47,28 +55,14 @@ let rec fill_table_node table = function
     end
 
 and fill_table_ast table c_ast = List.iter (fill_table_node table) c_ast
-   
-                      
-(**Class that contains the ast*)
-class ptr_ast (_ast:c_ast) = object
-  val p_ast = ref _ast
-    
-  method ast= !(p_ast)             
+  
 
-end   
+(** Generic table *)
+class general_table = object
+  val table : (string,c_node ref) Hashtbl.t = Hashtbl.create 50
+  method give_table () = table   
 
-                   
-
-(**Table that contained the name of the node and the node associated *)
-class table = object
-  val table = Hashtbl.create 50
-  method give_table () = table
-  method fill_table c_ast = fill_table_ast table c_ast
-
-
-   
-(** Research all the c_node associated to the subword "name"*)       
-  method potential_name subword = 
+  method potential subword = 
     let table1 = Hashtbl.copy table in 
     let aux x _ = 
       if not (is_subword subword x) then Hashtbl.remove table1 x
@@ -76,11 +70,39 @@ class table = object
     Hashtbl.iter aux table1;
     table1
 
-(** Research all the c_node associated to the function "name"*)
   method research name =
     if Hashtbl.mem table name then raise Fonction_not_exist;
     Hashtbl.find_all table name 
 
+end                    
+
+
+(** Class Table for the attribut name of nodes *)
+class table = object
+  inherit general_table 
+  method fill_table c_ast = fill_table_ast table c_ast
+end                     
+
+
+(** Fill a hashtable with the tag of the function and their c_node associated *)
+let rec fill_table_node_tag table = function
+  |Nil -> ()
+  |Node a as s->
+    begin
+      let b = ref s in
+      let c = a.meta#get_tag in
+      Hashtbl.iter (fun _ value -> List.iter (fun x -> match x with TStr y -> Hashtbl.add table y b|_->()) value) c;
+      fill_table_ast_tag table (a.children) 
+    end
+
+and fill_table_ast_tag table c_ast = List.iter (fill_table_node_tag table) c_ast
+   
+                      
+         
+(** Class Table  for the attribut meta of nodes *)
+class table_tag = object
+  inherit general_table
+  method fill_table c_ast = fill_table_ast_tag table c_ast
 end
 
 
@@ -266,8 +288,8 @@ let test_subword () =
   Hashtbl.add table2 "arbre" (ref node1);
   Hashtbl.add table3 "feuille" (ref node2);
   Hashtbl.add table3 "insecte" (ref node3);
-  assert_equal( table#potential_name "a" ) table2;
-  assert_equal( table#potential_name "ie") table3
+  assert_equal( table#potential "a" ) table2;
+  assert_equal( table#potential "ie") table3
 
 let test_subword2 () =  
   let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = new tags} in 
@@ -278,8 +300,26 @@ let test_subword2 () =
   table#fill_table [node3];
   Hashtbl.add table2 "arbre" (ref node1);
   Hashtbl.add table2 "arbre" (ref node2);
-  assert_equal( table#potential_name "arbre") table2
+  assert_equal( table#potential "arbre") table2
 
+let test_tag () = 
+  let meta = new tags in
+  let meta2 = new tags in
+  let tag1 = TStr "chat" in
+  let tag2 = TStr "chien" in
+  let tag3 = TStr "souris" in  
+  let tag4 = TStr "chaise" in
+  meta#add_tag "animaux" [tag1] ;
+  meta#add_tag "meuble" [tag4]; 
+  meta2#add_tag "animaux" [tag2;tag3] ;
+  let node1 = Node {name = "arbre"; header = "a1"; body = ref "a2"; children = [Nil]; meta = meta} in 
+  let node2 = Node {name = "insecte"; header = "c1"; body = ref "c2"; children = [node1; Nil]; meta = meta2} in
+  let table = new table_tag in
+  let table2 = Hashtbl.create 50 in
+  table#fill_table [node2];
+  Hashtbl.add table2 "chat" (ref node1); 
+  Hashtbl.add table2 "chaise" (ref node1);
+  assert_equal( table#potential "cha") table2
 
 let test_read_write_file () = 
   let meta = new tags in
@@ -307,4 +347,5 @@ let unittests ()=
     "Test_subword:">::(function _-> test_subword());
     "Test_subword2:">::(function _-> test_subword2());
     "Test_read_write_file:">::(function _-> test_read_write_file()) ;
+    "Test_tag:">::(function _-> test_tag()) ;
   ]

@@ -2,10 +2,10 @@ DEBUG_OPTION=-g
 SOURCE_DIR=src/
 
 PACKAGES=-package lablgtk2 -package oUnit -package compiler-libs.common
-LIBS=-lib dynlink
+LIBS=-lib dynlink -lib graphics
 BUILD=ocamlbuild -no-hygiene -r \
 	  -build-dir "$(BUILD_DIR)" \
-	  -cflags "$(DEBUG_OPTION) -w +A@1..3@5@8..28@30..47-48@49..59" \
+	  -cflags "$(DEBUG_OPTION)" \
 	  $(PACKAGES) $(LIBS)
 
 BUILD_DIR=debug/

@@ -35,27 +35,67 @@ class ptr_ast : c_ast -> object
 end           
 
                                   
+(** Generic class for tables
+    - for each node, associate a attribut of node and a reference of this node
+ *)
+class type general_table = object 
 
-(** Class Table that contained the name of the node and the node associated *)
-class type table = object
-  
   (**Hashtable that contains a description of a ast *)
-  val table : (string,c_node ref) Hashtbl.t
- 
-  (**  Return the value table of the class table*)
-  method give_table : unit ->(string,c_node ref) Hashtbl.t 
+  val table : (string, c_node ref) Hashtbl.t 
+
+(**  Return the value table of the class table*)
+  method give_table : unit -> (string, c_node ref) Hashtbl.t 
+  
+(**  Take in enter a string and return a hashtable of all the nodes associated a subword of the string*)       
+  method potential : string -> (string, c_node ref) Hashtbl.t
+
+(** Take in enter a string and return a list of all the nodes associated to the string*)
+  method research : string -> c_node ref list
+end
+
+
+
+           
+
+
+
+
+
+(** Class Table for the attribut name of nodes *)
+class type table = object
+  inherit general_table
 
   (**Take a ast and fill the table : for each node, 
-     it adds the name of the node associated to the reference  of the node*)
+     it adds the name of the node associated to a reference of the node*)
   method fill_table : c_ast -> unit
-   
-(**  Take in enter a string, name and return a hashtable of all the nodes associated a subword of the name*)       
-  method potential_name : string -> (string, c_node ref) Hashtbl.t
 
-(** Take in enter a string, name and return a list of all the nodes associated to the name*)
-  method research : string -> c_node ref list 
 
 end
+
+
+                    
+
+                   
+
+(** Class Table  for the attribut meta of nodes *)
+class type table_tag = object
+  inherit general_table
+
+  (**Take a ast and fill the table : for each node, 
+     it adds the tag of the node associated to a reference of the node*)
+  method fill_table : c_ast -> unit
+
+
+end
+
+
+       
+                   
+
+
+
+
+
 
 (** Function that take a name of a file and a ast and write in a file 
     the ast corresponding to the contains of the file.

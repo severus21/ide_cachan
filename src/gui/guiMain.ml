@@ -4,7 +4,7 @@ module Gset = Core.Gset
 
 let locale = GtkMain.Main.init ();;
 
-let notimp_callback = (fun () -> prerr_endline "Not Implemented");;
+(*let notimp_callback = (fun () -> prerr_endline "Not Implemented");;*)
 
 (* Pops up a "Do you want to quit" dialog and returns the answer *)
 let confirm_quit () =
@@ -49,11 +49,6 @@ let main () =
         b#add_child ba;
         a
     in
-    (* Edit menu *)
-    let factory = new GMenu.factory edit_menu ~accel_group in
-    ignore(factory#add_item "Find" ~key:_F
-        ~callback: (fun () -> ignore(GuiFindDialog.find_dialog window test_set)));
-    ignore(factory#add_item "Dependencies" ~key:_D ~callback:notimp_callback);
 
     (* Navlist *)
     let navlist = new GuiNavlist.navlist ~packing:vbox#add in
@@ -94,7 +89,7 @@ let main () =
             Printf.printf "Loading with first plugin at %s\n%!" path;
             let plugin = List.hd (Plugins.Factory.get_plugins ()) in
             let ast = plugin#path_to_c_ast path in
-            Core.Miscs.print_c_ast (fst ast);
+            (*Core.Miscs.print_c_ast (fst ast);*)
             navlist#set_root (fst ast);
             current_root := fst ast
         in
@@ -126,6 +121,10 @@ let main () =
                 end
     in
 
+    let dependencies_callback () : unit =
+        Dep_graph.dep_build !current_root 400 400
+    in
+
     (* File menu *)
     let factory = new GMenu.factory file_menu ~accel_group in
     ignore(factory#add_item "Import" ~key:_I ~callback: import_callback);
@@ -133,6 +132,12 @@ let main () =
     ignore(factory#add_item "Export" ~key:_S ~callback: export_callback);
     ignore(factory#add_item "Quit" ~key:_Q
         ~callback: (fun () -> if confirm_quit () then Main.quit ()));
+
+    (* Edit menu *)
+    let factory = new GMenu.factory edit_menu ~accel_group in
+    ignore(factory#add_item "Find" ~key:_F
+        ~callback: (fun () -> ignore(GuiFindDialog.find_dialog window test_set)));
+    ignore(factory#add_item "Dependencies" ~key:_D ~callback:dependencies_callback);
 
     (* Frame *)
     let frame = GBin.frame ~label:"Code" ~packing:vbox#add () in

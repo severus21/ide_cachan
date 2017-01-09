@@ -1,5 +1,7 @@
-(** Ce programme est appelé par GUI avec pour argument la liste des modules pour lesquels l'utilisateur veut des infos **)
-(** Pour la compilation avec ocamlc, faire 'ocamlc graphics.cma nom_du_fichier.ml' **)
+(** Ce programme est appelé par GUI avec pour argument la liste des modules
+ * pour lesquels l'utilisateur veut des infos
+ * Pour la compilation avec ocamlc, faire 'ocamlc graphics.cma
+ * nom_du_fichier.ml' **)
 open Graphics
 open Core.Miscs
 
@@ -24,7 +26,7 @@ let err_mess = "try to click on a box"
 (****** FONCTIONS PAS ENCORE CODEES ******)
 
 (* cette fonction va chercher (où ??) la liste des open faits dans le module en question *)
-let get_open modul open_list = snd (List.find (fun (x,y) -> x=modul) open_list)
+let get_open modul open_list = snd (List.find (fun (x,_) -> x=modul) open_list)
 (*    if modul = modul 
     then [["Blub";"Blab";"toto"] ; ["tyty";"Blob"];["titi"]] 
     else [["Blub";"Blab";"toto"] ; ["tyty";"Blob"];["titi"]]
@@ -35,8 +37,8 @@ let rec get_open_cast c_ast liste local_open =
     match c_ast with
     |[] -> liste , local_open
     |c_node::q -> (
-        let new_l,new_open = get_open_cnode c_node q local_open in
-        get_open_cast q newl new_open
+        let new_l,new_open = get_open_cnode c_node liste local_open in
+        get_open_cast q new_l new_open
     )
 
 
@@ -45,30 +47,30 @@ and get_open_cnode c_node liste local_open =
     |Nil -> liste , local_open
     |Node(node_int) -> (
         let meta = node_int.meta in
-        let tag = meta#get_tag "plg_ast" in
+        let tag = Hashtbl.find meta#get_tag "plg_ast" in
         match tag with
         |[] -> liste , local_open 
-        |[Tstr("Tl_open")] -> liste , (node_int.name::local_open)
-        |[Tstr("Tl_var")] -> liste , local_open
-        |[Tstr("Tl_constraint")] -> liste , local_open 
-        |[Tstr("Tl_fun")] -> liste , local_open 
-        |[Tstr("Tl_exception")] -> liste , local_open 
-        |[Tstr("Tl_type")] -> liste , local_open 
-        |[Tstr("Tl_module")] -> (
+    |[TStr("Tl_open")] -> liste , (node_int.name::local_open)
+        |[TStr("Tl_var")] -> liste , local_open
+        |[TStr("Tl_constraint")] -> liste , local_open 
+        |[TStr("Tl_fun")] -> liste , local_open 
+        |[TStr("Tl_exception")] -> liste , local_open 
+        |[TStr("Tl_type")] -> liste , local_open 
+        |[TStr("Tl_module")] -> (
             let new_name = node_int.name in
             let new_l,loc_open = get_open_cast (node_int.children) liste [] in
             ((new_name,loc_open)::new_l) , []
         )
-        |[Tstr("Tl_sign")] -> get_open_cast (node_int.children) liste local_open
-        |[Tstr("Tl_module_constraint")] -> (
+        |[TStr("Tl_sign")] -> get_open_cast (node_int.children) liste local_open
+        |[TStr("Tl_module_constraint")] -> (
             let new_name = node_int.name in
             let new_l,loc_open = get_open_cast (node_int.children) liste [] in
             ((new_name,loc_open)::new_l) , []
         )
-        |[Tstr("Tl_functor")] -> liste , local_open
-        |[Tstr("Tl_recmodule")] -> liste , local_open
-        |[Tstr("Tl_class")] ->  liste , local_open
-        |[Tstr("Tl_class_and")] -> liste , local_open
+        |[TStr("Tl_functor")] -> liste , local_open
+        |[TStr("Tl_recmodule")] -> liste , local_open
+        |[TStr("Tl_class")] ->  liste , local_open
+        |[TStr("Tl_class_and")] -> liste , local_open
     )
 
 
@@ -125,7 +127,8 @@ let rec big_l1_in_l2 l1 l2 = match l1 with
 (* parmis les dépendances d'un module, ne garde que celles concernant un autre module parmis ceux fournis *)
 let get_useful_dep modul modules open_list =
 	let l1 = get_open modul open_list in
-	big_l1_in_l2 l1 modules
+    let l' = List.map (String.split_on_char '.') l1 in
+	big_l1_in_l2 l' modules
 
 
 
@@ -145,9 +148,9 @@ let tupl_min (x,y) = (-x,-y)
 (* dessine la flèche correspondant à 'module1 fait appel à module2' *)
 let print_one_edge modul1 modul2 areas =
     set_color violet ;
-    let area1 = List.find (fun (modul,(x,y)) -> modul=modul1) areas in
+    let area1 = List.find (fun (modul,_) -> modul=modul1) areas in
     let (x1,y1) = snd area1 in
-    let area2 = List.find (fun (modul,(x,y)) -> modul=modul2) areas in
+    let area2 = List.find (fun (modul,_) -> modul=modul2) areas in
     let (x2,y2) = snd area2 in
     moveto x1 y1 ;
     lineto x2 y2 ;
@@ -264,14 +267,13 @@ let dep_build cast width height =
     let height_s = string_of_int height_i in
 
     let open_list,_ = get_open_cast cast [] [] in (* la grosse liste (string * string list) list *)
-    let modules = List.map (fun x,y -> x) liste in (* la liste de tous les modules du code *)
+    let modules = List.map (fun (x,_) -> x) open_list in (* la liste de tous les modules du code *)
 
     let areas = give_areas modules center ray in
 
     open_graph (" " ^ width_s ^ "x" ^ height_s) ;
     print_edges_complete modules areas open_list ;
     print_boxes areas ;
-
 
      ( while true do wait_click areas err_mess done )
 (*    with In_box str -> str
