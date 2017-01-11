@@ -1,10 +1,12 @@
 
 # LaTeX related files
-*.aux
-*.dvi
-*.log
-*.pdf
-*.ps
+**.aux
+**.dvi
+**.log
+**.pdf
+**.ps
+**.nav
+**.toc
 graph.tex
 # Build and doc directories
 debug/

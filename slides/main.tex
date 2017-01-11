@@ -5,7 +5,12 @@
 \usepackage{graphics}
 \usepackage{listings}
 
+\title{ide}
+\subtitle{Projet de génie logiciel}
+\author{G. Boudy, K.Lerun, L. Prosperi, R. Zucchini}
+
 \begin{document}
+\maketitle
 
 \begin{frame}
     \section{Outils}
@@ -38,6 +43,60 @@
         \item Documentation : ocamldoc(.odocl)     
     \end{itemize}        
 \end{frame}    
+
+\begin{frame}
+    \frametitle{Core} 
+
+    \begin{itemize}
+        \item Tag : Ajoute des informations \\
+        Permet d'indiquer la nature du code (fonction, reférence) \\
+        Pour l'instant des informations pour reconstituer l'ast à partir du c\_ast
+        \item Gset : Devrait contenir des morceaux de code
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Miscs}
+
+    c\_ast : arbre syntaxique extremement simple, avec des tags qui stocke des informations annexe propre à plugin
+    \begin{itemize}
+        \item exporter et importer le c\_ast.
+        \item rechercher en fonction du nom des fonctions, signature, ..
+        \item rechercher en fonction des tags.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Miscs}
+    \framesubtitle{C\_ast}
+
+    \lstinputlisting[language=Caml]{part1.ml}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Miscs}
+    \framesubtitle{C\_ast}
+
+    \lstinputlisting[language=Caml]{part2.ml}
+    \begin{itemize}
+        \item Name : fonction1
+        \item Header : x y
+        \item Body : let fonction1 x y =x + y
+        \item Children : Nil
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Miscs}
+    \framesubtitle{Recherche}
+
+    Module general\_table :\\ \ \\
+    module de créer des tables de hachage qui pré-tri le c\_ast 
+    soit par nom soit par tag.\\
+    On en peut extraire les nodes qui correspondent à un sous mot 
+    d'un nom ou d'un tag.
+\end{frame}
+
 
 \begin{frame}
 \section{Le système de plugin}
