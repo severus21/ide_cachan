@@ -1,0 +1,215 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{default}
+\usepackage{graphics}
+\usepackage{listings}
+
+\begin{document}
+
+\begin{frame}
+    \section{Outils}
+    \frametitle{Gestion du code}
+
+    \begin{itemize}
+        \item Git
+        \item Github    
+    \end{itemize}   
+\end{frame}    
+
+\begin{frame}
+    \frametitle{Gestion de la communication}
+
+    \begin{itemize}
+        \item Framateam
+        \item Github
+        \item Mail
+        \item La parole
+    \end{itemize}        
+\end{frame}
+
+\begin{frame}
+    \frametitle{Technologies}
+
+    \begin{itemize}
+        \item Ocaml 4.04.0 (vive les warnings!!!!!)
+        \item Compilation : ocamlbuild(.mlpack, \_tags)/make
+        \item Tests : OUnit2 
+        \item Documentation : ocamldoc(.odocl)     
+    \end{itemize}        
+\end{frame}    
+
+\begin{frame}
+\section{Le système de plugin}
+\frametitle{}
+ 
+ Objectifs :
+\begin{itemize}
+    \item Supporter un nouveau langage
+    \item Supporter une nouvelle fonctionalitée 
+    \item Indépendance %compilation séparée    
+    \item Rôle : exporter/importer du code sources vers un \textit{c\_ast}
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Un plugin}
+
+    Classe Ocaml contenant :
+    \begin{itemize}
+        \item nom
+        \item extensions concernées
+        \item \textit{path\_to\_c\_ast}    
+        \item \textit{c\_ast\_to\_path}
+        \item \textit{unitest}    
+    \end{itemize}        
+\end{frame}
+
+\begin{frame}
+    \frametitle{La gestion des plugins}
+
+    Module \textit{Factory}
+    \begin{itemize}
+        \item Detecter les plugins
+        \item Les charger en mémoire    
+    \end{itemize}        
+\end{frame}   
+
+\begin{frame}
+    \frametitle{Autres fonctionnalités}
+    
+    \begin{itemize}
+        \item Fonctions génériques pour le scan de dossier
+    \end{itemize}        
+\end{frame}    
+
+
+
+
+
+
+
+\begin{frame}
+    \section{Le plugin Ocaml}
+    \frametitle{}
+ 
+ Objectifs :
+ \begin{itemize}
+    \item Detecter les structures top-level 
+    \item Detecter la structure des modules, des classes
+    \item Gérer les interactions ml/mli
+ \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+    \includegraphics[width=\textwidth]{ocaml.png}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Liste des structures Ocaml supportées - sans recursion}
+    \begin{tabular}{ll}
+         ouverture de module & open NameModule\\
+         \pause
+         déclaration de variable/constante & let x = ref ... \\
+         \pause
+         déclaration de fonction & \\
+         \pause
+         exception & exception Troll of int\\
+         \pause
+         déclaration de type & \\
+         \pause
+         contrainte de type & x: int list, x : int $->$ bool\\ 
+         \pause
+         les elements classe & \\
+         & inherit avec/sans label\\
+         & methode privée/public avec/sans contrainte\\
+         & attribut avec/sans contrainte\\
+         & avec/sans constructeur\\
+    \end{tabular}
+\end{frame}
+
+\begin{frame}
+\frametitle{Liste des structures Ocaml supportées - avec recursion}
+    \begin{tabular}{ll}
+        les classes & avec/sans arguments\\
+        & avec/sans "self"\\
+        & virtuelle ou non\\
+        \pause            
+        les classes mutuellement recursives & \\
+        \pause
+        les classes avec contrainte & class ... :\\
+        & object ... end = object ... end\\
+         
+        les modules & avec/sans signature\\
+        \pause
+        & mutuellement recursif ou non\\
+        les signatures & \\
+        \pause
+        les foncteurs & \\
+    \end{tabular}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Architecture de test}
+
+    \begin{itemize}
+        \item Fonction \textit{unitest} par sous-module
+        \item Un sous-module \textit{Test} qui aggrége les tests
+        \item Export du sous module \textit{Test}    
+    \end{itemize}            
+\end{frame}
+
+\begin{frame}
+    \frametitle{Politique de tests}
+
+    \textbf{Ml vers AST temporaire}
+    \begin{itemize}
+        \item import : $>$ 1 test/structure (23 tests)
+        \item export : $\ge$ 1 test/structure (14 tests)
+    \end{itemize}        
+
+    \textbf{AST temporaire vers C\_ast}
+    \begin{itemize}
+        \item ~ 10 tests import/export
+    \end{itemize}        
+\end{frame}    
+
+\begin{frame}
+    \frametitle{Politique de documentation}
+    
+    \begin{itemize}
+        \item Fonctions
+            \begin{enumerate}
+                \item Descriptig général
+                \item Un commentaire par argument
+                \item Description du type de sortie
+                \item Descriptif des exceptions renvoyées    
+            \end{enumerate}
+        \item Types
+            \begin{enumerate}
+                \item Descriptif général
+                \item Descriptif des sous structures     
+                \item Exemples spécifiques    
+            \end{enumerate}       
+    \end{itemize}
+\end{frame}    
+
+\begin{frame}
+    \frametitle{Problèmes majeurs}
+
+    \begin{itemize}
+        \item Absence complète de documentation %reverse engeenering
+            \uncover<2->{
+                \lstinputlisting[language=Caml]{parsetree.ml}     
+            }
+        \uncover<3->{    
+            \item Problème de design du coeur
+        }
+    \end{itemize}   
+\end{frame}    
+
+\end{document}
