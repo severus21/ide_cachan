@@ -5,6 +5,8 @@
 \usepackage{graphics}
 \usepackage{listings}
 
+\DeclareUnicodeCharacter{00A0}{ }
+
 \title{ide}
 \subtitle{Projet de génie logiciel}
 \author{G. Boudy, K.Lerun, L. Prosperi, R. Zucchini}
@@ -18,9 +20,9 @@
 
     \begin{itemize}
         \item Git
-        \item Github    
-    \end{itemize}   
-\end{frame}    
+        \item Github
+    \end{itemize}
+\end{frame}
 
 \begin{frame}
     \frametitle{Gestion de la communication}
@@ -30,7 +32,7 @@
         \item Github
         \item Mail
         \item La parole
-    \end{itemize}        
+    \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -39,13 +41,13 @@
     \begin{itemize}
         \item Ocaml 4.04.0 (vive les warnings!!!!!)
         \item Compilation : ocamlbuild(.mlpack, \_tags)/make
-        \item Tests : OUnit2 
-        \item Documentation : ocamldoc(.odocl)     
-    \end{itemize}        
-\end{frame}    
+        \item Tests : OUnit2
+        \item Documentation : ocamldoc(.odocl)
+    \end{itemize}
+\end{frame}
 
 \begin{frame}
-    \frametitle{Core} 
+    \frametitle{Core}
 
     \begin{itemize}
         \item Tag : Ajoute des informations \\
@@ -91,9 +93,9 @@
     \framesubtitle{Recherche}
 
     Module general\_table :\\ \ \\
-    module de créer des tables de hachage qui pré-tri le c\_ast 
+    module de créer des tables de hachage qui pré-tri le c\_ast
     soit par nom soit par tag.\\
-    On en peut extraire les nodes qui correspondent à un sous mot 
+    On en peut extraire les nodes qui correspondent à un sous mot
     d'un nom ou d'un tag.
 \end{frame}
 
@@ -101,12 +103,12 @@
 \begin{frame}
 \section{Le système de plugin}
 \frametitle{}
- 
+
  Objectifs :
 \begin{itemize}
     \item Supporter un nouveau langage
-    \item Supporter une nouvelle fonctionalitée 
-    \item Indépendance %compilation séparée    
+    \item Supporter une nouvelle fonctionalitée
+    \item Indépendance %compilation séparée
     \item Rôle : exporter/importer du code sources vers un \textit{c\_ast}
 \end{itemize}
 
@@ -120,10 +122,10 @@
     \begin{itemize}
         \item nom
         \item extensions concernées
-        \item \textit{path\_to\_c\_ast}    
+        \item \textit{path\_to\_c\_ast}
         \item \textit{c\_ast\_to\_path}
-        \item \textit{unitest}    
-    \end{itemize}        
+        \item \textit{unitest}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -132,17 +134,17 @@
     Module \textit{Factory}
     \begin{itemize}
         \item Detecter les plugins
-        \item Les charger en mémoire    
-    \end{itemize}        
-\end{frame}   
+        \item Les charger en mémoire
+    \end{itemize}
+\end{frame}
 
 \begin{frame}
     \frametitle{Autres fonctionnalités}
-    
+
     \begin{itemize}
         \item Fonctions génériques pour le scan de dossier
-    \end{itemize}        
-\end{frame}    
+    \end{itemize}
+\end{frame}
 
 
 
@@ -153,10 +155,10 @@
 \begin{frame}
     \section{Le plugin Ocaml}
     \frametitle{}
- 
+
  Objectifs :
  \begin{itemize}
-    \item Detecter les structures top-level 
+    \item Detecter les structures top-level
     \item Detecter la structure des modules, des classes
     \item Gérer les interactions ml/mli
  \end{itemize}
@@ -181,7 +183,7 @@
          \pause
          déclaration de type & \\
          \pause
-         contrainte de type & x: int list, x : int $->$ bool\\ 
+         contrainte de type & x: int list, x : int $->$ bool\\
          \pause
          les elements classe & \\
          & inherit avec/sans label\\
@@ -197,12 +199,12 @@
         les classes & avec/sans arguments\\
         & avec/sans "self"\\
         & virtuelle ou non\\
-        \pause            
+        \pause
         les classes mutuellement recursives & \\
         \pause
         les classes avec contrainte & class ... :\\
         & object ... end = object ... end\\
-         
+
         les modules & avec/sans signature\\
         \pause
         & mutuellement recursif ou non\\
@@ -218,8 +220,8 @@
     \begin{itemize}
         \item Fonction \textit{unitest} par sous-module
         \item Un sous-module \textit{Test} qui aggrége les tests
-        \item Export du sous module \textit{Test}    
-    \end{itemize}            
+        \item Export du sous module \textit{Test}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -229,33 +231,33 @@
     \begin{itemize}
         \item import : $>$ 1 test/structure (23 tests)
         \item export : $\ge$ 1 test/structure (14 tests)
-    \end{itemize}        
+    \end{itemize}
 
     \textbf{AST temporaire vers C\_ast}
     \begin{itemize}
         \item ~ 10 tests import/export
-    \end{itemize}        
-\end{frame}    
+    \end{itemize}
+\end{frame}
 
 \begin{frame}
     \frametitle{Politique de documentation}
-    
+
     \begin{itemize}
         \item Fonctions
             \begin{enumerate}
                 \item Descriptig général
                 \item Un commentaire par argument
                 \item Description du type de sortie
-                \item Descriptif des exceptions renvoyées    
+                \item Descriptif des exceptions renvoyées
             \end{enumerate}
         \item Types
             \begin{enumerate}
                 \item Descriptif général
-                \item Descriptif des sous structures     
-                \item Exemples spécifiques    
-            \end{enumerate}       
+                \item Descriptif des sous structures
+                \item Exemples spécifiques
+            \end{enumerate}
     \end{itemize}
-\end{frame}    
+\end{frame}
 
 \begin{frame}
     \frametitle{Problèmes majeurs}
@@ -263,12 +265,12 @@
     \begin{itemize}
         \item Absence complète de documentation %reverse engeenering
             \uncover<2->{
-                \lstinputlisting[language=Caml]{parsetree.ml}     
+                \lstinputlisting[language=Caml]{parsetree.ml}
             }
-        \uncover<3->{    
+        \uncover<3->{
             \item Problème de design du coeur
         }
-    \end{itemize}   
-\end{frame}    
+    \end{itemize}
+\end{frame}
 
 \end{document}
