@@ -50,20 +50,24 @@ and get_open_cnode c_node liste local_open =
         let tag = Hashtbl.find meta#get_tag "plg_ast" in
         match tag with
         |[] -> liste , local_open 
-    |[TStr("Tl_open")] -> liste , (node_int.name::local_open)
+        |[TStr("Tl_open")] -> ( print_string ("nouvel open : " ^ node_int.name ^ "\n%!") ; liste , (node_int.name::local_open))
         |[TStr("Tl_var")] -> liste , local_open
         |[TStr("Tl_constraint")] -> liste , local_open 
         |[TStr("Tl_fun")] -> liste , local_open 
         |[TStr("Tl_exception")] -> liste , local_open 
         |[TStr("Tl_type")] -> liste , local_open 
         |[TStr("Tl_module")] -> (
+            (* on est à la racine d'un nouveau module *)
             let new_name = node_int.name in
+            print_string ("trouvé un module nommé " ^ new_name ^ "\n%!") ;
             let new_l,loc_open = get_open_cast (node_int.children) liste [] in
             ((new_name,loc_open)::new_l) , []
         )
         |[TStr("Tl_sign")] -> get_open_cast (node_int.children) liste local_open
         |[TStr("Tl_module_constraint")] -> (
+            (* on est à la racine d'un nouveau module *)
             let new_name = node_int.name in
+            print_string ("trouvé un module nommé " ^ new_name ^ "\n%!") ;
             let new_l,loc_open = get_open_cast (node_int.children) liste [] in
             ((new_name,loc_open)::new_l) , []
         )
@@ -241,7 +245,7 @@ let is_in pos area =
 let rec get_module_name pos areas err_mess =
     match areas with
     |[] -> print_error pos err_mess
-    |area::q -> if is_in pos area then (print_string "toto" ; raise (In_box(fst area))) else get_module_name pos q err_mess
+    |area::q -> if is_in pos area then (close_graph () ; raise (In_box(fst area))) else get_module_name pos q err_mess
 
 (* attend que l'utilisateur clique et renvoie le nom du module ou l'exception Not_in_a_box *)
 let wait_click areas err_mess =
@@ -275,9 +279,4 @@ let dep_build cast width height =
     print_edges_complete modules areas open_list ;
     print_boxes areas ;
 
-     ( while true do wait_click areas err_mess done )
-(*    with In_box str -> str
-*)
-(*
-let () = dep_build ["toto";"titi";"tyty";"tete";"jojo";"jyjy"] 1200 750
-*)
+    ( while true do wait_click areas err_mess done )
